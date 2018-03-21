@@ -10,6 +10,7 @@
         </encoder>
     </appender>
 
+
     <logger name="org.springframework" level="ERROR"/>
 
     <logger name="codes.monkey" level="INFO" additivity="false">

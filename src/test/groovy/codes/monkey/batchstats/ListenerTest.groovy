@@ -1,5 +1,6 @@
 package codes.monkey.batchstats
 
+import com.codahale.metrics.MetricRegistry
 import org.junit.Assert
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -14,23 +15,23 @@ import org.springframework.batch.core.configuration.annotation.StepBuilderFactor
 import org.springframework.batch.core.launch.JobLauncher
 import org.springframework.batch.core.repository.JobRepository
 import org.springframework.batch.core.repository.support.JobRepositoryFactoryBean
-import org.springframework.batch.item.file.FlatFileItemReader
+import org.springframework.batch.item.ItemReader
 import org.springframework.batch.item.support.ListItemReader
 import org.springframework.batch.item.support.ListItemWriter
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.context.annotation.Import
 import org.springframework.core.task.TaskExecutor
-import org.springframework.jdbc.datasource.embedded.EmbeddedDatabase
 import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseBuilder
 import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor
-import org.springframework.scheduling.config.TaskExecutorFactoryBean
 import org.springframework.test.annotation.DirtiesContext
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner
 
 import javax.sql.DataSource
+import java.util.concurrent.ThreadLocalRandom
 import java.util.function.Function
 
 /**
@@ -57,6 +58,7 @@ class ListenerTest {
 
 
     @Configuration
+    @Import(StatsConfig)
     @EnableBatchProcessing
     static class ListenerJobConfig extends DefaultBatchConfigurer {
 
@@ -79,18 +81,18 @@ class ListenerTest {
         }
 
         @Bean
-        Job job(TaskExecutor taskExecutor){
-            def listener = new StatsListener()
+        Job job(TaskExecutor taskExecutor, MetricRegistry metricRegistry){
+            def listener = new StatsListener(metricRegistry)
             jobBuilderFactory
                     .get("job")
             .start(
                     stepBuilderFactory.get("step1")
                     .chunk(10)
-                    .reader(new ListItemReader((1..100).collect()))
+                    .reader(new VariableRateReaderDecorator<>(new ListItemReader((1..100).collect())))
                     .processor ({it -> it * 2} as Function)
                     .writer(new ListItemWriter())
                     .listener(listener as Object)
-                    .taskExecutor(taskExecutor)
+//                    .taskExecutor(taskExecutor)
                     .build()
             ).build()
 
@@ -113,6 +115,20 @@ class ListenerTest {
             factory.setTransactionManager(getTransactionManager())
             factory.afterPropertiesSet()
             factory.getObject()
+        }
+    }
+
+    static class VariableRateReaderDecorator<T> implements ItemReader<T> {
+        private ItemReader<T> delegate
+
+        VariableRateReaderDecorator(ItemReader<T> delegate) {
+            this.delegate = delegate
+        }
+
+        @Override
+        T read() throws Exception {
+            Thread.sleep(ThreadLocalRandom.current().nextInt(100, 501))
+            delegate.read()
         }
     }
 }

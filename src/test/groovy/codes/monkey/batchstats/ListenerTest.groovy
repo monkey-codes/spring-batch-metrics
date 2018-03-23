@@ -1,18 +1,26 @@
 package codes.monkey.batchstats
 
+import ch.qos.logback.classic.Logger
+import ch.qos.logback.classic.LoggerContext
+import ch.qos.logback.classic.spi.ILoggingEvent
+import ch.qos.logback.core.read.ListAppender
 import com.codahale.metrics.MetricRegistry
+import org.hamcrest.Matchers
 import org.junit.Assert
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.slf4j.LoggerFactory
 import org.springframework.batch.core.BatchStatus
 import org.springframework.batch.core.Job
 import org.springframework.batch.core.JobExecution
 import org.springframework.batch.core.JobParameters
+import org.springframework.batch.core.annotation.BeforeStep
 import org.springframework.batch.core.configuration.annotation.DefaultBatchConfigurer
 import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing
 import org.springframework.batch.core.configuration.annotation.JobBuilderFactory
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory
 import org.springframework.batch.core.launch.JobLauncher
+import org.springframework.batch.core.listener.JobListenerFactoryBean
 import org.springframework.batch.core.repository.JobRepository
 import org.springframework.batch.core.repository.support.JobRepositoryFactoryBean
 import org.springframework.batch.item.ItemReader
@@ -51,9 +59,14 @@ class ListenerTest {
     @DirtiesContext
     @Test
     void testConcurrentLongRunningJobExecutions() throws Exception {
-
+//        LoggerContext lc = (LoggerContext) LoggerFactory.getILoggerFactory()
+//        ListAppender<ILoggingEvent>  listAppender = new ListAppender<>()
+//        listAppender.context = lc
+//        listAppender.start()
+//        ((Logger)LoggerFactory.getLogger(StatsListener.name)).addAppender(listAppender)
         JobExecution jobExecution = jobLauncher.run(job, new JobParameters())
         Assert.assertEquals(jobExecution.status, BatchStatus.COMPLETED)
+//        Assert.assertThat(listAppender.list.size(), Matchers.greaterThan(0))
     }
 
 
@@ -82,16 +95,18 @@ class ListenerTest {
 
         @Bean
         Job job(TaskExecutor taskExecutor, MetricRegistry metricRegistry){
-            def listener = new StatsListener(metricRegistry)
+            def statsListener = new StatsListener(metricRegistry)
+//            def statsListener = new ThreadDebugListener()
             jobBuilderFactory
                     .get("job")
+            .listener(JobListenerFactoryBean.getListener(statsListener))
             .start(
                     stepBuilderFactory.get("step1")
                     .chunk(10)
                     .reader(new VariableRateReaderDecorator<>(new ListItemReader((1..100).collect())))
                     .processor ({it -> it * 2} as Function)
                     .writer(new ListItemWriter())
-                    .listener(listener as Object)
+                    .listener(statsListener as Object)
 //                    .taskExecutor(taskExecutor)
                     .build()
             ).build()
@@ -127,7 +142,7 @@ class ListenerTest {
 
         @Override
         T read() throws Exception {
-            Thread.sleep(ThreadLocalRandom.current().nextInt(100, 501))
+            Thread.sleep(ThreadLocalRandom.current().nextInt(100, 250))
             delegate.read()
         }
     }

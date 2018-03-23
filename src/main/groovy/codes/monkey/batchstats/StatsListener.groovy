@@ -5,16 +5,14 @@ import com.codahale.metrics.Timer
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.batch.core.JobExecution
-import org.springframework.batch.core.JobExecutionListener
 import org.springframework.batch.core.StepExecution
 import org.springframework.batch.core.annotation.*
 import org.springframework.batch.core.scope.context.ChunkContext
 
-
 /**
  * @author Johan Zietsman (jzietsman@thoughtworks.com.au).
  */
-class StatsListener{
+class StatsListener {
 
     private static Logger LOG = LoggerFactory.getLogger(StatsListener.class.name)
 
@@ -31,85 +29,83 @@ class StatsListener{
 
     @BeforeJob
     void beforeJob(JobExecution jobExecution) {
-        timerStack.push(metricRegistry.timer(namespace.push(jobExecution.jobInstance.jobName).name()).time())
-
+        push(jobExecution.jobInstance.jobName)
     }
 
     @AfterJob
     void afterJob(JobExecution jobExecution) {
-        namespace.pop()
-        timerStack.pop().stop()
+        pop()
+        if(!timerStack.isEmpty()){
+            throw new IllegalStateException("timer stack is not empty!")
+        }
         Thread.sleep(6000) //nasty allow the metrics reporter 1 last chance to report.
     }
 
     @BeforeStep
     void beforeStep(StepExecution stepExecution) {
-        namespace.push(stepExecution.stepName)
-        timerStack.push(metricRegistry.timer(namespace.name()).time())
+        push(stepExecution.stepName)
     }
 
     @AfterStep
-    void afterStep(StepExecution stepExecution){
-
-        namespace.pop() //step
-        timerStack.pop().stop()
+    void afterStep(StepExecution stepExecution) {
+        pop()
     }
 
     @BeforeChunk
-    void beforeChunk(ChunkContext context){
-        namespace.push("chunk")
-        timerStack.push(metricRegistry.timer(namespace.name()).time())
-        LOG.info("beforeChunk")
+    void beforeChunk(ChunkContext context) {
+        push("chunk")
     }
 
     @AfterChunk
-    void afterChunk(ChunkContext context){
+    void afterChunk(ChunkContext context) {
         popNullRead()
-        namespace.pop()
-        timerStack.pop().stop()
-        LOG.info("afterChunk")
+        pop()
+    }
+
+    @BeforeRead
+    void beforeRead() {
+        push("read")
+    }
+
+
+    @AfterRead
+    void afterRead(Object item) {
+        pop()
+    }
+
+    @BeforeProcess
+    void beforeProcess(Object item) {
+        push("process")
+    }
+
+    @AfterProcess
+    void afterProcess(Object item, Object result) {
+        pop()
+    }
+
+    @BeforeWrite
+    void beforeWrite(List<?> items) {
+        push("write")
+    }
+
+    @AfterWrite
+    void afterWrite(List<?> items) {
+        pop()
+    }
+
+    private void push(String name) {
+        namespace.push(name)
+        timerStack.push(metricRegistry.timer(namespace.name()).time())
     }
 
     private void popNullRead() {
-        if(namespace.leaf().equals("read")){
+        if (namespace.leaf().equals("read")) {
             namespace.pop() //null read - nasty
             timerStack.pop() // null read timer
         }
     }
 
-
-    @BeforeRead
-    void beforeRead() {
-        namespace.push("read")
-        timerStack.push(metricRegistry.timer(namespace.name()).time())
-    }
-
-    @AfterRead
-    void afterRead(Object item) {
-        namespace.pop()
-        timerStack.pop().stop()
-    }
-
-    @BeforeProcess
-    void beforeProcess(Object item) {
-        namespace.push("process")
-        timerStack.push(metricRegistry.timer(namespace.name()).time())
-    }
-
-    @AfterProcess
-    void afterProcess(Object item, Object result){
-        namespace.pop()
-        timerStack.pop().stop()
-    }
-
-    @BeforeWrite
-    void beforeWrite(List<?> items){
-        namespace.push("write")
-        timerStack.push(metricRegistry.timer(namespace.name()).time())
-    }
-
-    @AfterWrite
-    void afterWrite(List<?> items){
+    private void pop() {
         namespace.pop()
         timerStack.pop().stop()
     }

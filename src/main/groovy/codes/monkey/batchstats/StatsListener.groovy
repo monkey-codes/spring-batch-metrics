@@ -75,6 +75,8 @@ class StatsListener {
 
     @BeforeProcess
     void beforeProcess(Object item) {
+        popNullRead() // when chunk size is than configured, not enough reads left to fill the chunk. In this case
+        // a beforeProcess is called after a beforeRead instead of an afterChunk after a beforeRead
         push("process")
     }
 

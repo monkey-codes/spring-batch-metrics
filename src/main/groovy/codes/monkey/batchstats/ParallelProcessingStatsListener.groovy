@@ -62,7 +62,6 @@ class ParallelProcessingStatsListener {
         def tns = threadNamespace.get()
         tns.push("chunk")
         threadTimerStack.get().push(metricRegistry.timer(tns.name()).time())
-        LOG.info("beforeChunk")
     }
 
     @AfterChunk
@@ -72,7 +71,6 @@ class ParallelProcessingStatsListener {
         threadTimerStack.get().pop().stop()
 //        namespace.pop()
 //        timerStack.pop().stop()
-        LOG.info("afterChunk")
     }
 
     private void popNullRead() {
@@ -99,12 +97,29 @@ class ParallelProcessingStatsListener {
     @BeforeProcess
     void beforeProcess(Object item) {
         def tns = threadNamespace.get()
+        popNullRead()
+//        if(tns.leaf().equals("read")){
+//            LOG.error("illegal state",new IllegalStateException("illegal state"))
+//        }
         tns.push("process")
         threadTimerStack.get().push(metricRegistry.timer(tns.name()).time())
     }
 
     @AfterProcess
     void afterProcess(Object item, Object result){
+        threadNamespace.get().pop()
+        threadTimerStack.get().pop().stop()
+    }
+
+    @BeforeWrite
+    void beforeWrite(List<?> items) {
+        def tns = threadNamespace.get()
+        tns.push("write")
+        threadTimerStack.get().push(metricRegistry.timer(tns.name()).time())
+    }
+
+    @AfterWrite
+    void afterWrite(List<?> items) {
         threadNamespace.get().pop()
         threadTimerStack.get().pop().stop()
     }

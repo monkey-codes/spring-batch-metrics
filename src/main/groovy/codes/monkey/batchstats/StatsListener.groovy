@@ -87,6 +87,7 @@ class StatsListener {
 
     @BeforeWrite
     void beforeWrite(List<?> items) {
+//        LOG.info("write size:${items.size()}")
         push("write")
     }
 

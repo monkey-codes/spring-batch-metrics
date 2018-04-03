@@ -18,6 +18,10 @@ class ThreadDebugListener {
 
     def delegate
 
+    ThreadDebugListener(){
+        this(new NOOPDelegate())
+    }
+
     ThreadDebugListener(delegate) {
         this.delegate = delegate
     }
@@ -59,6 +63,11 @@ class ThreadDebugListener {
         this.delegate.afterChunk(context)
     }
 
+    @AfterChunkError
+    void afterChunkError(ChunkContext context){
+        LOG.info("afterChunkError")
+        this.delegate.afterChunkError(context)
+    }
 
     @BeforeRead
     void beforeRead() {
@@ -70,6 +79,18 @@ class ThreadDebugListener {
     void afterRead(Object item) {
         LOG.info("afterRead")
         this.delegate.afterRead(item)
+    }
+
+    @OnReadError
+    void onReadError(Exception e){
+        LOG.info("onReadError")
+        this.delegate.onReadError(e)
+    }
+
+    @OnSkipInRead
+    void onSkipInRead(Exception e){
+        LOG.info("onSkipInRead")
+        this.delegate.onSkipInRead(e)
     }
 
     @BeforeProcess
@@ -84,6 +105,19 @@ class ThreadDebugListener {
         this.delegate.afterProcess(item, result)
     }
 
+    @OnProcessError
+    void onProcessError(Object item, Exception e){
+        LOG.info("onProcessError")
+        this.delegate.onProcessError(item, e)
+    }
+
+    @OnSkipInProcess
+    void onSkipInProcess(Object item, Exception e){
+        LOG.info("onSkipInProcess")
+        this.delegate.onSkipInProcess(item, e)
+    }
+
+
     @BeforeWrite
     void beforeWrite(List<?> items) {
         LOG.info("beforeWrite")
@@ -95,7 +129,25 @@ class ThreadDebugListener {
     void afterWrite(List<?> items) {
         LOG.info("afterWrite")
         this.delegate.afterWrite(items)
-
     }
 
+    @OnWriteError
+    void onWriteError(Exception ex, List<?> items) {
+        LOG.info("onWriteError")
+        this.delegate.onWriteError(ex, items)
+    }
+
+    @OnSkipInWrite
+    void onSkipInWrite(Object item, Exception ex) {
+        LOG.info("onSkipInWrite")
+        this.delegate.onSkipInWrite(item, ex)
+    }
+
+//    static class NOOPDelegate {
+//
+//        def methodMissing(String name, args) {
+//            // Intercept method that starts with find.
+//            this.metaClass."$name" = {->}
+//        }
+//    }
 }

@@ -62,6 +62,14 @@ class StatsListener {
         pop()
     }
 
+    @AfterChunkError
+    void afterChunkError(ChunkContext context){
+        //chunk restarts so pop the previous one too
+        metricRegistry.counter("${namespace.name()}.error").inc()
+        namespace.pop()
+        timerStack.pop()
+    }
+
     @BeforeRead
     void beforeRead() {
         push("read")
@@ -71,6 +79,18 @@ class StatsListener {
     @AfterRead
     void afterRead(Object item) {
         pop()
+    }
+
+    @OnReadError
+    void onReadError(Exception e){
+        metricRegistry.counter("${namespace.name()}.error").inc()
+        namespace.pop()
+        timerStack.pop()
+    }
+
+    @OnSkipInRead
+    void onSkipInRead(Exception e){
+        //TODO deal with skipInRead
     }
 
     @BeforeProcess
@@ -85,15 +105,38 @@ class StatsListener {
         pop()
     }
 
+    @OnProcessError
+    void onProcessError(Object item, Exception e){
+        metricRegistry.counter("${namespace.name()}.error").inc()
+        //pop process
+        namespace.pop()
+        timerStack.pop()
+    }
+
+    @OnSkipInProcess
+    void onSkipInProcess(Object item, Exception e){
+        //TODO deal with onSkipInProcess
+    }
+
+
     @BeforeWrite
     void beforeWrite(List<?> items) {
-//        LOG.info("write size:${items.size()}")
         push("write")
     }
 
     @AfterWrite
     void afterWrite(List<?> items) {
         pop()
+    }
+
+    @OnWriteError
+    void onWriteError(Exception ex, List<?> items) {
+        println "here"
+    }
+
+    @OnSkipInWrite
+    void onSkipInWrite(Object item, Exception ex) {
+        //TODO deal with onSkipInWrite
     }
 
     private void push(String name) {

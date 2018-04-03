@@ -7,12 +7,14 @@ import org.springframework.batch.core.JobExecution
 import org.springframework.batch.core.JobParameters
 import org.springframework.batch.core.launch.JobLauncher
 import org.springframework.batch.core.listener.JobListenerFactoryBean
+import org.springframework.batch.item.function.FunctionItemProcessor
 import org.springframework.batch.item.support.ListItemWriter
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.TestConfiguration
 import org.springframework.context.annotation.Bean
 import org.springframework.test.annotation.DirtiesContext
 import org.springframework.test.context.ContextConfiguration
+import spock.lang.Shared
 import spock.lang.Specification
 
 import java.util.function.Function
@@ -20,6 +22,7 @@ import java.util.function.Function
 import static codes.monkey.batchstats.StatsEventsGrabber.lastEvent
 import static org.hamcrest.Matchers.allOf
 import static org.hamcrest.Matchers.hasEntry
+import static org.hamcrest.Matchers.instanceOf
 import static spock.util.matcher.HamcrestSupport.expect
 
 /**
@@ -36,6 +39,15 @@ class StatsListenerSpec extends Specification {
 
     @Autowired
     MutableListItemReader reader
+
+    @Autowired
+    InterceptingItemReader interceptingItemReader
+
+    @Autowired
+    InterceptingItemProcessor interceptingItemProcessor
+
+    @Autowired
+    InterceptingItemWriter interceptingItemWriter
 
     StatsEventsGrabber statsEventsGrabber
 
@@ -66,8 +78,48 @@ class StatsListenerSpec extends Specification {
 
         where:
         range    | readCount | processCount | writeCount | comment
+        (1..2)   | 2         | 2            | 1          | "simple"
         (1..100) | 100       | 100          | 10         | "items divisible by chunk size"
         (1..108) | 108       | 108          | 11         | "items not divisible by chunk size"
+    }
+
+    @DirtiesContext
+    def "it should deal with errors"() {
+        given:
+
+        reader.list = (1..5).collect()
+        this."$errorOn".transform = {
+            if(it instanceof List) {
+                if(it.contains(errorOnItem))
+                    throw new RuntimeException("fake writer error")
+                return it
+            }
+            if(it == errorOnItem)
+                throw new RuntimeException("fake error")
+            it
+        }
+
+        when:
+        JobExecution jobExecution = jobLauncher.run(job, new JobParameters())
+
+        then:
+        jobExecution.status == BatchStatus.COMPLETED
+        expect statsEventsGrabber, allOf(
+                lastEvent('job.step1.chunk.read', hasEntry('count', String.valueOf(readCount))),
+                lastEvent('job.step1.chunk.process', hasEntry('count', String.valueOf(processCount))),
+                lastEvent('job.step1.chunk.write', hasEntry('count', '1')),
+                lastEvent("job.step1.chunk.$errorEvent" as String, hasEntry('count', '1'))
+        )
+
+        where:
+        errorOn                     |errorOnItem | errorEvent             | readCount | processCount
+        'interceptingItemReader'    |1           | 'read.error'           | 4         | 4
+        'interceptingItemProcessor' |2           | 'process.error'        | 5         | 4
+//        'interceptingItemWriter' |2           | 'write.error'        | 5         | 5
+
+        /*
+        * Need state machine to deal with write errors, once chunks are reduced to lists of 1 after a write error
+        * only afterWrite*/
     }
 
     @TestConfiguration
@@ -79,17 +131,37 @@ class StatsListenerSpec extends Specification {
         }
 
         @Bean
-        Job job(MutableListItemReader reader, MetricRegistry metricRegistry) {
-            def statsListener = new StatsListener(metricRegistry)
+        InterceptingItemReader interceptingItemReader(MutableListItemReader reader) {
+            new InterceptingItemReader(reader)
+        }
+
+        @Bean
+        InterceptingItemProcessor interceptingItemProcessor(){
+            new InterceptingItemProcessor(new FunctionItemProcessor({  it -> it * 2 }))
+        }
+
+        @Bean
+        InterceptingItemWriter interceptingItemWriter(){
+            new InterceptingItemWriter(new ListItemWriter())
+        }
+
+        @Bean
+        Job job(InterceptingItemReader reader, InterceptingItemProcessor processor,
+                InterceptingItemWriter writer, MetricRegistry metricRegistry) {
+            def statsListener = new ThreadDebugListener(new StatsListener(metricRegistry))
+//            def statsListener = new ThreadDebugListener()
             jobBuilderFactory
                     .get("job")
                     .listener(JobListenerFactoryBean.getListener(statsListener))
                     .start(
                     stepBuilderFactory.get("step1")
                             .chunk(10)
+                            .faultTolerant().skip(Throwable).skipLimit(Integer.MAX_VALUE).listener(statsListener as Object)
                             .reader(reader)
-                            .processor({ it -> it * 2 } as Function)
-                            .writer(new ListItemWriter())
+//                            .processor({  it -> it * 2 } as Function)
+                            .processor(processor)
+//                            .writer(new ListItemWriter())
+                            .writer(writer)
                             .listener(statsListener as Object)
                             .build()
             ).build()

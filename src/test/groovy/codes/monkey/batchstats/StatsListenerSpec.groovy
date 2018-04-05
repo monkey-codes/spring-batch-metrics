@@ -3,9 +3,7 @@ package codes.monkey.batchstats
 import codes.monkey.batchstats.statemachine.JobStateMachine
 import com.codahale.metrics.MetricRegistry
 import com.codahale.metrics.ScheduledReporter
-import org.hamcrest.Description
 import org.hamcrest.Matcher
-import org.hamcrest.TypeSafeMatcher
 import org.springframework.batch.core.BatchStatus
 import org.springframework.batch.core.Job
 import org.springframework.batch.core.JobExecution
@@ -72,9 +70,9 @@ class StatsListenerSpec extends Specification {
         then:
         jobExecution.status == BatchStatus.COMPLETED
         expect statsEventsGrabber, allOf(
-                lastEvent('job.step1.chunk.read', hasEntry('count', String.valueOf(readCount))),
-                lastEvent('job.step1.chunk.process', hasEntry('count', String.valueOf(processCount))),
-                lastEvent('job.step1.chunk.write', hasEntry('count', String.valueOf(writeCount)))
+                lastEvent('job.step1.chunk.read', hasCount(readCount)),
+                lastEvent('job.step1.chunk.process', hasCount(processCount)),
+                lastEvent('job.step1.chunk.write', hasCount(writeCount))
         )
 
         where:
@@ -89,17 +87,7 @@ class StatsListenerSpec extends Specification {
         given:
 
         reader.list = (1..5).collect()
-//        reader.list = (1..2).collect()
-        this."$errorOn".transform = {
-            if (it instanceof List) {
-                if (it.contains(errorOnItem))
-                    throw new RuntimeException("fake writer error")
-                return it
-            }
-            if (it == errorOnItem)
-                throw new RuntimeException("fake error")
-            it
-        }
+        this."$errorOn".transform = exceptionOn(errorItem)
 
         when:
         JobExecution jobExecution = jobLauncher.run(job, new JobParameters())
@@ -107,40 +95,60 @@ class StatsListenerSpec extends Specification {
         then:
         jobExecution.status == BatchStatus.COMPLETED
         expect statsEventsGrabber, allOf(
-                lastEvent('job.step1.chunk.read', hasEntry('count', String.valueOf(readCount))),
-                lastEvent('job.step1.chunk.process', hasEntry('count', String.valueOf(processCount))),
-                lastEvent('job.step1.chunk.write', hasEntry('count', String.valueOf(writeCount))),
-                lastEvent("job.step1.chunk.$errorEvent" as String, hasEntry('count', '1')),
+                lastEvent('job.step1.chunk.read', hasCount(readCount)),
+                lastEvent('job.step1.chunk.process', hasCount(processCount)),
+                lastEvent('job.step1.chunk.write', hasCount(writeCount)),
+                lastEvent("job.step1.chunk.${errorEvent}.error", hasCount(1)),
                 expectations
         )
 
         where:
-        errorOn                     | errorOnItem | errorEvent      | readCount | processCount | writeCount | expectations
-        'interceptingItemReader'    | 1           | 'read.error'    | 4         | 4            | 1          | noop()
-        'interceptingItemProcessor' | 2           | 'process.error' | 5         | 4            | 1          | noop()
-        'interceptingItemWriter'    | 2           | 'write.error'   | 5         | 5            | 0          | writeError()
+        errorOn                     | errorItem   | errorEvent | readCount | processCount | writeCount | expectations
+        'interceptingItemReader'    | 1           | 'read'     | 4         | 4            | 1          | readError(1)
+        'interceptingItemProcessor' | 2           | 'process'  | 5         | 4            | 1          | processError(1)
+        'interceptingItemWriter'    | 2           | 'write'    | 5         | 5            | 0          | writeError(1, 4, 1)
 
         /*
         * Need state machine to deal with write errors, once chunks are reduced to lists of 1 after a write error
         * only afterWrite*/
     }
 
-    static Matcher<StatsEventsGrabber> noop() {
-        return new TypeSafeMatcher<StatsEventsGrabber>() {
-            @Override
-            protected boolean matchesSafely(StatsEventsGrabber item) {
-                return true;
+    private Closure exceptionOn(errorOnItem) {
+        { item ->
+            if (item instanceof List) {
+                if (item.contains(errorOnItem))
+                    throw new RuntimeException("fake writer error")
+                return item
             }
-
-            @Override
-            void describeTo(Description description) {
-            }
+            if (item == errorOnItem)
+                throw new RuntimeException("fake error")
+            item
         }
     }
 
-    static Matcher<StatsEventsGrabber> writeError() {
+    private static Matcher<Map<? extends String, ? extends String>> hasCount(int count) {
+        hasEntry('count', String.valueOf(count))
+    }
+
+    static Matcher<StatsEventsGrabber> writeError(count, writeCount, skipCount) {
         allOf(
-                lastEvent('job.step1.chunk.write.error.reprocess', hasEntry('count', '1'))
+                lastEvent('job.step1.chunk.write.error.reprocess', hasCount(count)),
+                lastEvent('job.step1.chunk.write.error.reprocess.write', hasCount(writeCount)),
+                lastEvent('job.step1.chunk.write.error.reprocess.write.skip', hasCount(skipCount))
+        )
+    }
+
+    static Matcher<StatsEventsGrabber> readError(skipCount) {
+        skipError('job.step1.chunk.read.skip', skipCount)
+    }
+
+    static Matcher<StatsEventsGrabber> processError(skipCount) {
+        skipError('job.step1.chunk.process.skip', skipCount)
+    }
+
+    private static Matcher<StatsEventsGrabber> skipError(String s, skipCount) {
+        allOf(
+                lastEvent(s, hasCount(skipCount))
         )
     }
 
@@ -173,9 +181,10 @@ class StatsListenerSpec extends Specification {
                 InterceptingItemWriter writer, MetricRegistry metricRegistry, ScheduledReporter reporter) {
 //            def statsListener = new ThreadDebugListener(new StatsListener(metricRegistry))
 //            def statsListener = new ThreadDebugListener()
-            def statsListener = new ThreadDebugListener(JobStateMachine.idle(
-                    new StatsListener(metricRegistry, { reporter.report() }))
+            def statsListener = JobStateMachine.idle(
+                    new StatsListener(metricRegistry, { reporter.report() })
             )
+
             jobBuilderFactory
                     .get("job")
                     .listener(JobListenerFactoryBean.getListener(statsListener))

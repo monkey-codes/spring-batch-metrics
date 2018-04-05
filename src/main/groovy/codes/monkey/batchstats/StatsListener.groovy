@@ -140,17 +140,17 @@ class StatsListener implements JobStateListener {
 
     @Override
     void onSkipInRead(Throwable t) {
-        // TODO count skips
+        metricRegistry.counter("${namespace.name()}.read.skip").inc()
     }
 
     @Override
     void onSkipInWrite(Object item, Throwable t) {
-        //TODO count skips
+        metricRegistry.counter("${namespace.name()}.write.skip").inc()
     }
 
     @Override
     void onSkipInProcess(Object item, Throwable t) {
-        //TODO count skips
+        metricRegistry.counter("${namespace.name()}.process.skip").inc()
     }
 
     @Override

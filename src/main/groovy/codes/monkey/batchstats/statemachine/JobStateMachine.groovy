@@ -122,17 +122,17 @@ class JobStateMachine implements BatchListener {
 
         @Override
         void afterProcess(Object item, Object result) {
-            swallowEvent('afterProcess', item, result)
+            listener.beforeWrite([item])
         }
 
         @Override
         void onWriteError(Exception exception, List items) {
-            swallowEvent('onWriteError', exception, items)
+            listener.onWriteError(exception, items)
         }
 
         @Override
         void afterWrite(List items) {
-            swallowEvent('afterWrite', items)
+            listener.afterWrite(items)
         }
 
         @Override
@@ -144,7 +144,7 @@ class JobStateMachine implements BatchListener {
 
         @Override
         void onSkipInWrite(Object item, Throwable t) {
-            swallowEvent('onSkipInWrite', item, t)
+            listener.onSkipInWrite(item, t)
         }
 
         @Override
@@ -166,7 +166,6 @@ class JobStateMachine implements BatchListener {
         }
 
         void swallowEvent(Object... args) {
-            //do nothing
         }
 
     }

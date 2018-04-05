@@ -26,7 +26,7 @@ class StatsEventsGrabber {
 
     Map<String, String> lastEvent(String name) {
         def loggingEvent = listAppender.list.reverse()
-                .find { it.formattedMessage.contains(name) }
+                .find { it.formattedMessage.contains("name=$name,") }
         def properties = new Properties()
         properties.load(new StringReader(loggingEvent.formattedMessage.replace(', ', '\n')))
         new HashMap<>(properties)

@@ -2,6 +2,7 @@ package codes.monkey.batchstats
 
 import com.codahale.metrics.MetricRegistry
 import com.codahale.metrics.Reporter
+import com.codahale.metrics.ScheduledReporter
 import com.codahale.metrics.Slf4jReporter
 import com.codahale.metrics.jvm.CachedThreadStatesGaugeSet
 import com.codahale.metrics.jvm.GarbageCollectorMetricSet
@@ -29,7 +30,7 @@ class StatsConfig {
     }
 
     @Bean
-    Reporter reporter(MetricRegistry metricRegistry){
+    ScheduledReporter reporter(MetricRegistry metricRegistry){
         def reporter = Slf4jReporter.forRegistry(metricRegistry)
                 .outputTo(LoggerFactory.getLogger(StatsListener.class.name))
                 .convertRatesTo(TimeUnit.SECONDS)

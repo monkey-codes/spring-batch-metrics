@@ -1,5 +1,8 @@
 package codes.monkey.batchstats.statemachine
 
+import codes.monkey.batchstats.StatsListener
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import org.springframework.batch.core.ExitStatus
 import org.springframework.batch.core.JobExecution
 import org.springframework.batch.core.StepExecution
@@ -10,6 +13,8 @@ import org.springframework.batch.core.scope.context.ChunkContext
  */
 class JobStateMachine implements BatchListener {
 
+    private static Logger LOG = LoggerFactory.getLogger(JobStateMachine.class.name)
+
     private final JobStateListener listener
     @Delegate
     private BatchListener currentState
@@ -19,15 +24,21 @@ class JobStateMachine implements BatchListener {
     }
 
     private void updateState(BatchListener newState){
-//        def from = currentState == null ? 'null' : currentState.getClass().simpleName
-//        def to = newState.getClass().simpleName
-//        println "$from -> $to"
+        def from = currentState == null ? 'null' : currentState.getClass().simpleName
+        def to = newState.getClass().simpleName
+        LOG.debug "$from -> $to"
         currentState = newState
     }
 
     static JobStateMachine idle(JobStateListener listener) {
         def machine = new JobStateMachine(listener)
         machine.updateState(new Idle(machine))
+        machine
+    }
+
+    static def jobRunning(StatsListener listener) {
+        def machine = new JobStateMachine(listener)
+        machine.updateState(new JobRunning(machine))
         machine
     }
 
@@ -112,6 +123,11 @@ class JobStateMachine implements BatchListener {
         @Override
         void onSkipInRead(Throwable t) {
             listener.onSkipInRead(t)
+        }
+
+        @Override
+        void onSkipInWrite(Object item, Throwable t) {
+            listener.onSkipInWrite(item, t)
         }
     }
 
@@ -245,7 +261,9 @@ class JobStateMachine implements BatchListener {
 
         @Override
         void onWriteError(Exception exception, List items) {
-            listener.onWriteError(exception, items)
+            //we don't know if a beforeWrite was fired so this will unbalance the event interface
+            swallowEvent('onWriteError', exception, items)
+//            listener.onWriteError(exception, items)
         }
 
         @Override

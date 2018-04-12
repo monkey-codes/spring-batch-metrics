@@ -113,7 +113,7 @@ class StatsListenerSpec extends Specification {
         * only afterWrite*/
     }
 
-    private Closure exceptionOn(errorOnItem) {
+    static Closure exceptionOn(errorOnItem) {
         { item ->
             if (item instanceof List) {
                 if (item.contains(errorOnItem))
@@ -126,7 +126,7 @@ class StatsListenerSpec extends Specification {
         }
     }
 
-    private static Matcher<Map<? extends String, ? extends String>> hasCount(int count) {
+    static Matcher<Map<? extends String, ? extends String>> hasCount(int count) {
         hasEntry('count', String.valueOf(count))
     }
 

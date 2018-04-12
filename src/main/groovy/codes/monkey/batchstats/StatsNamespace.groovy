@@ -22,6 +22,11 @@ class StatsNamespace {
 
     private StatsNamespace updateCurrent() {
         //TODO improve the reverse thingy
+        if(stack.isEmpty() && parent) {
+            currentNamespace = parent.name()
+            return this
+        }
+
         def tempNamespace = new ArrayList<>(stack).reverse().stream().collect(Collectors.joining("."))
         if(parent){
             currentNamespace = parent.name()+"."+tempNamespace

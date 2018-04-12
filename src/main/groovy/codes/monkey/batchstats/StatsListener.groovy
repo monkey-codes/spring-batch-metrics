@@ -19,9 +19,13 @@ class StatsListener implements JobStateListener {
 
 
     StatsListener(MetricRegistry metricRegistry, Closure afterJobCallback) {
+        this(metricRegistry, new StatsNamespace(), afterJobCallback)
+    }
+
+    StatsListener(MetricRegistry metricRegistry, StatsNamespace namespace, Closure afterJobCallback) {
         this.metricRegistry = metricRegistry
         this.afterJobCallback = afterJobCallback
-        namespace = new StatsNamespace()
+        this.namespace = namespace
     }
 
     private Deque<Timer.Context> timerStack = new ArrayDeque<>()

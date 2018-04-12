@@ -1,12 +1,15 @@
 package codes.monkey.batchstats
 
 import com.codahale.metrics.MetricRegistry
+import com.codahale.metrics.ScheduledReporter
+import org.hamcrest.Matchers
 import org.springframework.batch.core.BatchStatus
 import org.springframework.batch.core.Job
 import org.springframework.batch.core.JobExecution
 import org.springframework.batch.core.JobParameters
 import org.springframework.batch.core.launch.JobLauncher
 import org.springframework.batch.core.listener.JobListenerFactoryBean
+import org.springframework.batch.item.function.FunctionItemProcessor
 import org.springframework.batch.item.support.ListItemWriter
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.annotation.Bean
@@ -17,11 +20,11 @@ import org.springframework.test.annotation.DirtiesContext
 import org.springframework.test.context.ContextConfiguration
 import spock.lang.Specification
 
-import java.util.function.Function
-
 import static codes.monkey.batchstats.StatsEventsGrabber.lastEvent
+import static codes.monkey.batchstats.StatsListenerSpec.exceptionOn
+import static codes.monkey.batchstats.StatsListenerSpec.hasCount
 import static org.hamcrest.Matchers.allOf
-import static org.hamcrest.Matchers.hasEntry
+import static org.hamcrest.Matchers.greaterThanOrEqualTo
 import static spock.util.matcher.HamcrestSupport.expect
 
 /**
@@ -38,6 +41,15 @@ class ParallelProcessingStatsListenerSpec extends Specification {
 
     @Autowired
     MutableListItemReader reader
+
+    @Autowired
+    InterceptingItemReader interceptingItemReader
+
+    @Autowired
+    InterceptingItemProcessor interceptingItemProcessor
+
+    @Autowired
+    InterceptingItemWriter interceptingItemWriter
 
     StatsEventsGrabber statsEventsGrabber
 
@@ -61,9 +73,13 @@ class ParallelProcessingStatsListenerSpec extends Specification {
         then:
         jobExecution.status == BatchStatus.COMPLETED
         expect statsEventsGrabber, allOf(
-                lastEvent('job.step1.chunk.read', hasEntry('count', String.valueOf(readCount))),
-                lastEvent('job.step1.chunk.process', hasEntry('count', String.valueOf(processCount))),
-                lastEvent('job.step1.chunk.write', hasEntry('count', String.valueOf(writeCount)))
+                lastEvent('job.step1.chunk.read', hasCount(readCount)),
+                lastEvent('job.step1.chunk.process', hasCount(processCount)),
+                /*
+                * Because multiple threads are reading, you may end up with several chunks in the end that is not
+                * filled to chunk size capacity, thus you could get more chunk writes than itemCount/chunkSize
+                * */
+                lastEvent('job.step1.chunk.write', hasCount(greaterThanOrEqualTo(writeCount)))
         )
 
         where:
@@ -72,8 +88,60 @@ class ParallelProcessingStatsListenerSpec extends Specification {
         (1..108) | 108       | 108          | 11         | "items not divisible by chunk size"
     }
 
+    @DirtiesContext
+    def "it should deal with errors"() {
+        given:
+
+        reader.list = (1..5).collect()
+        this."$errorOn".transform = StatsListenerSpec.exceptionOn(errorItem)
+
+        when:
+        JobExecution jobExecution = jobLauncher.run(job, new JobParameters())
+
+        then:
+        jobExecution.status == BatchStatus.COMPLETED
+        expect statsEventsGrabber, allOf(
+                lastEvent('job.step1.chunk.read', hasCount(readCount)),
+                lastEvent('job.step1.chunk.process', hasCount(processCount)),
+                lastEvent('job.step1.chunk.write', hasCount(greaterThanOrEqualTo(writeCount))),
+//                lastEvent("job.step1.chunk.${errorEvent}.error", hasCount(1))
+        )
+
+        where:
+        errorOn                     | errorItem   | errorEvent | readCount | processCount | writeCount
+//        'interceptingItemReader'    | 1           | 'read'     | 4         | 4            | 1
+        'interceptingItemProcessor' | 2           | 'process'  | 5         | 4            | 1
+//        'interceptingItemWriter'    | 2           | 'write'    | 5         | 5            | 0
+
+        /*
+        * Need state machine to deal with write errors, once chunks are reduced to lists of 1 after a write error
+        * only afterWrite
+        * Turns out on multi threaded processing, the same thread that detects the write error is not reponsible
+        * for the chunk reprocessing, these could be spread over several threads.  My next approach will be to change
+        * how re processing is detected. onWriteError cannot be used anymore. The only solution I can think of is
+        * to make the state machine states more finely grained and then detect a beforeChunk->beforeProcess and call
+        * that reprocessing as suppose to a normal beforeChunk-beforeRead.
+        * */
+
+    }
+
     @Configuration
     static class ListenerJobConfig extends ListenerTestConfig {
+
+        @Bean
+        InterceptingItemReader interceptingItemReader(MutableListItemReader reader) {
+            new InterceptingItemReader(reader)
+        }
+
+        @Bean
+        InterceptingItemProcessor interceptingItemProcessor() {
+            new InterceptingItemProcessor(new FunctionItemProcessor({ it -> it * 2 }))
+        }
+
+        @Bean
+        InterceptingItemWriter interceptingItemWriter() {
+            new InterceptingItemWriter(new ListItemWriter())
+        }
 
         @Bean
         MutableListItemReader mutableListItemReader() {
@@ -91,17 +159,23 @@ class ParallelProcessingStatsListenerSpec extends Specification {
         }
 
         @Bean
-        Job job(MutableListItemReader reader, TaskExecutor taskExecutor, MetricRegistry metricRegistry) {
-            def statsListener = new ParallelProcessingStatsListener(metricRegistry)
+        Job job(TaskExecutor taskExecutor, InterceptingItemReader reader, InterceptingItemProcessor processor,
+                InterceptingItemWriter writer, MetricRegistry metricRegistry, ScheduledReporter reporter) {
+            def statsListener = new ThreadDebugListener(
+                    new ParallelProcessingStatsListener(metricRegistry, { reporter.report() })
+            )
+
+//            def statsListener = new ThreadDebugListener()
             jobBuilderFactory
                     .get("job")
                     .listener(JobListenerFactoryBean.getListener(statsListener))
                     .start(
                     stepBuilderFactory.get("step1")
                             .chunk(10)
+                            .faultTolerant().skip(Throwable).skipLimit(Integer.MAX_VALUE).listener(statsListener as Object)
                             .reader(new SynchronizedItemReader(reader))
-                            .processor({ it -> it * 2 } as Function)
-                            .writer(new SynchronizedItemWriter(new ListItemWriter()))
+                            .processor(processor)
+                            .writer(new SynchronizedItemWriter(writer))
                             .listener(statsListener as Object)
                             .taskExecutor(taskExecutor)
                             .build()
@@ -109,4 +183,63 @@ class ParallelProcessingStatsListenerSpec extends Specification {
         }
     }
 
+    public static void main(String[] args) {
+        def collect = """2018-04-09 09:41:08.959 [main] INFO  - beforeJob  
+2018-04-09 09:41:09.016 [main] INFO  - beforeStep  
+2018-04-09 09:41:09.027 [taskExecutor-3] INFO  - beforeChunk  
+2018-04-09 09:41:09.027 [taskExecutor-4] INFO  - beforeChunk  
+2018-04-09 09:41:09.027 [taskExecutor-1] INFO  - beforeChunk  
+2018-04-09 09:41:09.027 [taskExecutor-2] INFO  - beforeChunk  
+2018-04-09 09:41:09.037 [taskExecutor-1] INFO  - beforeRead  
+2018-04-09 09:41:09.037 [taskExecutor-3] INFO  - beforeRead  
+2018-04-09 09:41:09.037 [taskExecutor-4] INFO  - beforeRead  
+2018-04-09 09:41:09.037 [taskExecutor-2] INFO  - beforeRead  
+2018-04-09 09:41:09.043 [taskExecutor-3] INFO  - afterRead  
+2018-04-09 09:41:09.043 [taskExecutor-4] INFO  - afterRead  
+2018-04-09 09:41:09.043 [taskExecutor-2] INFO  - afterRead  
+2018-04-09 09:41:09.043 [taskExecutor-1] INFO  - afterRead  
+2018-04-09 09:41:09.049 [taskExecutor-2] INFO  - beforeRead  
+2018-04-09 09:41:09.049 [taskExecutor-1] INFO  - beforeRead  
+2018-04-09 09:41:09.049 [taskExecutor-3] INFO  - beforeRead  
+2018-04-09 09:41:09.049 [taskExecutor-1] INFO  - afterRead  
+2018-04-09 09:41:09.050 [taskExecutor-1] INFO  - beforeRead  
+2018-04-09 09:41:09.049 [taskExecutor-4] INFO  - beforeRead  
+2018-04-09 09:41:09.053 [taskExecutor-3] INFO  - beforeProcess  
+2018-04-09 09:41:09.053 [taskExecutor-2] INFO  - beforeProcess  
+2018-04-09 09:41:09.053 [taskExecutor-1] INFO  - beforeProcess  
+2018-04-09 09:41:09.053 [taskExecutor-4] INFO  - beforeProcess  
+2018-04-09 09:41:09.059 [taskExecutor-1] INFO  - afterProcess  
+2018-04-09 09:41:09.059 [taskExecutor-4] INFO  - afterProcess  
+2018-04-09 09:41:09.059 [taskExecutor-2] INFO  - afterProcess  
+2018-04-09 09:41:09.059 [taskExecutor-3] INFO  - afterProcess  
+2018-04-09 09:41:09.060 [taskExecutor-1] INFO  - beforeProcess  
+2018-04-09 09:41:09.060 [taskExecutor-1] INFO  - afterProcess  
+2018-04-09 09:41:09.061 [taskExecutor-1] INFO  - beforeWrite  
+2018-04-09 09:41:09.061 [taskExecutor-3] INFO  - beforeWrite  
+2018-04-09 09:41:09.061 [taskExecutor-2] INFO  - beforeWrite  
+2018-04-09 09:41:09.061 [taskExecutor-4] INFO  - beforeWrite  
+2018-04-09 09:41:09.067 [taskExecutor-1] INFO  - afterWrite  
+2018-04-09 09:41:09.068 [taskExecutor-4] INFO  - afterWrite  
+2018-04-09 09:41:09.068 [taskExecutor-2] INFO  - afterWrite  
+2018-04-09 09:41:09.070 [taskExecutor-3] INFO  - onWriteError  
+2018-04-09 09:41:09.071 [taskExecutor-2] INFO  - afterChunk  
+2018-04-09 09:41:09.072 [taskExecutor-5] INFO  - beforeChunk  
+2018-04-09 09:41:09.072 [taskExecutor-4] INFO  - afterChunk  
+2018-04-09 09:41:09.073 [taskExecutor-5] INFO  - beforeRead  
+2018-04-09 09:41:09.074 [taskExecutor-1] INFO  - afterChunk  
+2018-04-09 09:41:09.076 [taskExecutor-5] INFO  - afterChunk  
+2018-04-09 09:41:09.077 [taskExecutor-3] INFO  - afterChunkError  
+2018-04-09 09:41:09.081 [taskExecutor-2] INFO  - beforeChunk  
+2018-04-09 09:41:09.082 [taskExecutor-2] INFO  - beforeProcess  
+2018-04-09 09:41:09.082 [taskExecutor-2] INFO  - afterProcess  
+2018-04-09 09:41:09.084 [taskExecutor-2] INFO  - onWriteError  
+2018-04-09 09:41:09.085 [taskExecutor-2] INFO  - afterChunkError"""
+                .split("\n")
+                .findAll { it.contains("taskExecutor-2") }
+                .collect { it.replaceAll(".* - ", '') }
+//                .collect { "'${it.trim()}'" }
+                .collect { "then: 1 * jobStateListener.${it.trim()}(*_)" }
+        println collect.join("\n")
+//        println collect.join(",")
+    }
 }

@@ -1,127 +1,126 @@
 package codes.monkey.batchstats
 
+import codes.monkey.batchstats.statemachine.BatchListener
+import codes.monkey.batchstats.statemachine.JobStateMachine
 import com.codahale.metrics.MetricRegistry
-import com.codahale.metrics.Timer
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
+import org.springframework.batch.core.ExitStatus
 import org.springframework.batch.core.JobExecution
 import org.springframework.batch.core.StepExecution
-import org.springframework.batch.core.annotation.*
 import org.springframework.batch.core.scope.context.ChunkContext
 
 /**
  * @author Johan Zietsman (jzietsman@thoughtworks.com.au).
  */
-class ParallelProcessingStatsListener {
-
-    private static Logger LOG = LoggerFactory.getLogger(ParallelProcessingStatsListener.class.name)
+class ParallelProcessingStatsListener implements  BatchListener {
 
     private MetricRegistry metricRegistry
-    private volatile StatsNamespace namespace = new StatsNamespace()
+    private volatile StatsNamespace parentNamespace = new StatsNamespace()
+    private JobStateMachine jobLevelState
+
+    private ThreadLocal<JobStateMachine> chunkLevelState = ThreadLocal.withInitial {
+        JobStateMachine.jobRunning(new StatsListener(metricRegistry, new StatsNamespace(parentNamespace), {}))
+    }
 
 
-    ParallelProcessingStatsListener(MetricRegistry metricRegistry) {
+    ParallelProcessingStatsListener(MetricRegistry metricRegistry, Closure afterJobCallback) {
         this.metricRegistry = metricRegistry
-//        namespace = new StatsNamespace()
+        jobLevelState = JobStateMachine.idle(
+                new StatsListener(metricRegistry, parentNamespace, afterJobCallback )
+        )
     }
 
-    private Deque<Timer.Context> timerStack = new ArrayDeque<>()
-    private ThreadLocal<Deque<Timer.Context>> threadTimerStack = ThreadLocal.withInitial({new ArrayDeque<>()})
-    private ThreadLocal<StatsNamespace> threadNamespace = ThreadLocal.withInitial({new StatsNamespace(namespace)})
-
-    @BeforeJob
+    @Override
     void beforeJob(JobExecution jobExecution) {
-        timerStack.push(metricRegistry.timer(namespace.push(jobExecution.jobInstance.jobName).name()).time())
-
+        jobLevelState.beforeJob(jobExecution)
     }
 
-    @AfterJob
+    @Override
     void afterJob(JobExecution jobExecution) {
-        namespace.pop()
-        def stop = timerStack.pop().stop()
-        Thread.sleep(6000) //nasty allow the metrics reporter 1 last chance to report.
+        jobLevelState.afterJob(jobExecution)
     }
 
-    @BeforeStep
-    void beforeStep(StepExecution stepExecution) {
-        namespace.push(stepExecution.stepName)
-        timerStack.push(metricRegistry.timer(namespace.name()).time())
+    @Override
+    void beforeChunk(ChunkContext context) {
+        chunkLevelState.get().beforeChunk(context)
     }
 
-    @AfterStep
-    void afterStep(StepExecution stepExecution){
-
-        namespace.pop() //step
-        timerStack.pop().stop()
+    @Override
+    void afterChunk(ChunkContext context) {
+        chunkLevelState.get().afterChunk(context)
     }
 
-    @BeforeChunk
-    void beforeChunk(ChunkContext context){
-//        namespace.push("chunk")
-//        timerStack.push(metricRegistry.timer(namespace.name()).time())
-        def tns = threadNamespace.get()
-        tns.push("chunk")
-        threadTimerStack.get().push(metricRegistry.timer(tns.name()).time())
+    @Override
+    void afterChunkError(ChunkContext context) {
+        chunkLevelState.get().afterChunkError(context)
     }
 
-    @AfterChunk
-    void afterChunk(ChunkContext context){
-        popNullRead()
-        threadNamespace.get().pop()
-        threadTimerStack.get().pop().stop()
-//        namespace.pop()
-//        timerStack.pop().stop()
-    }
-
-    private void popNullRead() {
-        if(threadNamespace.get().leaf().equals("read")){
-            threadNamespace.get().pop() //null read - nasty
-            threadTimerStack.get().pop() // null read timer
-        }
-    }
-
-
-    @BeforeRead
-    void beforeRead() {
-        def tns = threadNamespace.get()
-        tns.push("read")
-        threadTimerStack.get().push(metricRegistry.timer(tns.name()).time())
-    }
-
-    @AfterRead
-    void afterRead(Object item) {
-        threadNamespace.get().pop()
-        threadTimerStack.get().pop().stop()
-    }
-
-    @BeforeProcess
+    @Override
     void beforeProcess(Object item) {
-        def tns = threadNamespace.get()
-        popNullRead()
-//        if(tns.leaf().equals("read")){
-//            LOG.error("illegal state",new IllegalStateException("illegal state"))
-//        }
-        tns.push("process")
-        threadTimerStack.get().push(metricRegistry.timer(tns.name()).time())
+        chunkLevelState.get().beforeProcess(item)
     }
 
-    @AfterProcess
-    void afterProcess(Object item, Object result){
-        threadNamespace.get().pop()
-        threadTimerStack.get().pop().stop()
+    @Override
+    void afterProcess(Object item, Object result) {
+        chunkLevelState.get().afterProcess(item, result)
     }
 
-    @BeforeWrite
-    void beforeWrite(List<?> items) {
-        def tns = threadNamespace.get()
-        tns.push("write")
-        threadTimerStack.get().push(metricRegistry.timer(tns.name()).time())
+    @Override
+    void onProcessError(Object item, Exception e) {
+        chunkLevelState.get().onProcessError(item, e)
     }
 
-    @AfterWrite
-    void afterWrite(List<?> items) {
-        threadNamespace.get().pop()
-        threadTimerStack.get().pop().stop()
+    @Override
+    void beforeRead() {
+        chunkLevelState.get().beforeRead()
     }
 
+    @Override
+    void afterRead(Object item) {
+        chunkLevelState.get().afterRead(item)
+    }
+
+    @Override
+    void onReadError(Exception ex) {
+        chunkLevelState.get().onReadError(ex)
+    }
+
+    @Override
+    void beforeWrite(List items) {
+        chunkLevelState.get().beforeWrite(items)
+    }
+
+    @Override
+    void afterWrite(List items) {
+        chunkLevelState.get().afterWrite(items)
+    }
+
+    @Override
+    void onWriteError(Exception exception, List items) {
+        chunkLevelState.get().onWriteError(exception, items)
+    }
+
+    @Override
+    void onSkipInRead(Throwable t) {
+        chunkLevelState.get().onSkipInRead(t)
+    }
+
+    @Override
+    void onSkipInWrite(Object item, Throwable t) {
+        chunkLevelState.get().onSkipInWrite(item, t)
+    }
+
+    @Override
+    void onSkipInProcess(Object item, Throwable t) {
+        chunkLevelState.get().onSkipInProcess(item, t)
+    }
+
+    @Override
+    void beforeStep(StepExecution stepExecution) {
+        jobLevelState.beforeStep(stepExecution)
+    }
+
+    @Override
+    ExitStatus afterStep(StepExecution stepExecution) {
+        return jobLevelState.afterStep(stepExecution)
+    }
 }

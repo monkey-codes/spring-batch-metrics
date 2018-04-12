@@ -87,7 +87,7 @@ class StatsListenerSpec extends Specification {
         given:
 
         reader.list = (1..5).collect()
-        this."$errorOn".transform = exceptionOn(errorItem)
+        this."$errorOn".transform = exceptionOn(*errorItem)
 
         when:
         JobExecution jobExecution = jobLauncher.run(job, new JobParameters())
@@ -104,23 +104,23 @@ class StatsListenerSpec extends Specification {
 
         where:
         errorOn                     | errorItem   | errorEvent | readCount | processCount | writeCount | expectations
-//        'interceptingItemReader'    | 1           | 'read'     | 4         | 4            | 1          | readError(1)
-        'interceptingItemProcessor' | 4           | 'process'  | 5         | 4            | 1          | processError(1)
-//        'interceptingItemWriter'    | 2           | 'write'    | 5         | 5            | 0          | writeError(1, 4, 1)
+//        'interceptingItemReader'    | [1]           | 'read'     | 4         | 4            | 1          | readError(1)
+        'interceptingItemProcessor' | [2,4]           | 'process'  | 5         | 4            | 1          | processError(1)
+//        'interceptingItemWriter'    | [2]           | 'write'    | 5         | 5            | 0          | writeError(1, 4, 1)
 
         /*
         * Need state machine to deal with write errors, once chunks are reduced to lists of 1 after a write error
         * only afterWrite*/
     }
 
-    static Closure exceptionOn(errorOnItem) {
+    static Closure exceptionOn(...errorOnItem) {
         { item ->
             if (item instanceof List) {
-                if (item.contains(errorOnItem))
+                if (item.any {errorOnItem.contains(it)})
                     throw new RuntimeException("fake writer error")
                 return item
             }
-            if (item == errorOnItem)
+            if (errorOnItem.contains(item))
                 throw new RuntimeException("fake error")
             item
         }

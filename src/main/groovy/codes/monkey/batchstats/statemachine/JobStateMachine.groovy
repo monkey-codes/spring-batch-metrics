@@ -99,6 +99,7 @@ class JobStateMachine implements BatchListener {
         @Override
         void beforeProcess(Object item) {
             listener.beforeChunkWriteErrorReProcess()
+            listener.beforeProcess(item)
             updateState(new ChunkReprocess())
         }
 
@@ -219,15 +220,6 @@ class JobStateMachine implements BatchListener {
         }
     }
 
-    class WriteError extends BatchListenerSupport {
-        @Override
-        void afterChunkError(ChunkContext context) {
-            listener.afterChunkError(context)
-            listener.beforeChunkWriteErrorReProcess()
-            updateState(new ChunkReprocess())
-        }
-    }
-
     class ChunkReprocess extends BatchListenerSupport {
 
 //        ChunkContext lastAfterChunkContext
@@ -251,12 +243,19 @@ class JobStateMachine implements BatchListener {
 
         @Override
         void beforeProcess(Object item) {
-            swallowEvent('beforeProcess', item)
+            listener.beforeProcess(item)
+//            swallowEvent('beforeProcess', item)
         }
 
         @Override
         void afterProcess(Object item, Object result) {
-            swallowEvent('afterProcess', item, result)
+              listener.afterProcess(item, result)
+//            swallowEvent('afterProcess', item, result)
+        }
+
+        @Override
+        void onProcessError(Object item, Exception e) {
+            listener.onProcessError(item, e)
         }
 
         @Override

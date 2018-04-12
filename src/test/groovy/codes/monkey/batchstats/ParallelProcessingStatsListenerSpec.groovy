@@ -93,7 +93,7 @@ class ParallelProcessingStatsListenerSpec extends Specification {
         given:
 
         reader.list = (1..5).collect()
-        this."$errorOn".transform = StatsListenerSpec.exceptionOn(errorItem)
+        this."$errorOn".transform = StatsListenerSpec.exceptionOn(*errorItem)
 
         when:
         JobExecution jobExecution = jobLauncher.run(job, new JobParameters())
@@ -108,10 +108,10 @@ class ParallelProcessingStatsListenerSpec extends Specification {
         )
 
         where:
-        errorOn                     | errorItem   | errorEvent | readCount | processCount | writeCount
-//        'interceptingItemReader'    | 1           | 'read'     | 4         | 4            | 1
-        'interceptingItemProcessor' | 2           | 'process'  | 5         | 4            | 1
-//        'interceptingItemWriter'    | 2           | 'write'    | 5         | 5            | 0
+        errorOn                     | errorItem       | errorEvent | readCount | processCount | writeCount
+        'interceptingItemReader'    | [1]             | 'read'     | 4         | 4            | 1
+        'interceptingItemProcessor' | [2]             | 'process'  | 5         | 4            | 1
+        'interceptingItemWriter'    | [2]             | 'write'    | 5         | 5            | 0
 
         /*
         * Need state machine to deal with write errors, once chunks are reduced to lists of 1 after a write error
@@ -161,9 +161,9 @@ class ParallelProcessingStatsListenerSpec extends Specification {
         @Bean
         Job job(TaskExecutor taskExecutor, InterceptingItemReader reader, InterceptingItemProcessor processor,
                 InterceptingItemWriter writer, MetricRegistry metricRegistry, ScheduledReporter reporter) {
-            def statsListener = new ThreadDebugListener(
+            def statsListener =
                     new ParallelProcessingStatsListener(metricRegistry, { reporter.report() })
-            )
+
 
 //            def statsListener = new ThreadDebugListener()
             jobBuilderFactory

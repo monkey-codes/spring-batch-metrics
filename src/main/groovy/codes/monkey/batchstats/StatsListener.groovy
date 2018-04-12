@@ -48,7 +48,7 @@ class StatsListener implements JobStateListener {
 
     @Override
     void beforeChunkWriteErrorReProcess() {
-        push('chunk.write.error.reprocess')
+        push('reprocess')
     }
 
     @Override

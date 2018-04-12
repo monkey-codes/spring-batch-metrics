@@ -86,7 +86,7 @@ class JobStateMachineSpec extends Specification {
         // @formatter:on
     }
 
-    def "it should notify listener of process error"() {
+    def "it should notify listener of process error - chunk size 1"() {
         given:
         JobStateMachine stateMachine = JobStateMachine.idle(jobStateListener)
 
@@ -110,9 +110,11 @@ class JobStateMachineSpec extends Specification {
         then: 1 * jobStateListener.onProcessError(*_)
         then: 1 * jobStateListener.afterChunkError(*_)
         then: 1 * jobStateListener.beforeChunk(*_)
-        then: 1 * jobStateListener.beforeWrite(*_)
-        then: 1 * jobStateListener.afterWrite(*_)
+        then: 1 * jobStateListener.beforeChunkWriteErrorReProcess()
+        then: 0 * jobStateListener.beforeWrite(*_)
+        then: 0 * jobStateListener.afterWrite(*_)
         then: 1 * jobStateListener.onSkipInProcess(*_)
+        then: 1 * jobStateListener.afterChunkWriteErrorReProcess()
         then: 1 * jobStateListener.afterChunk(*_)
         then: 1 * jobStateListener.beforeChunk(*_)
         then: 1 * jobStateListener.beforeRead()
@@ -121,10 +123,73 @@ class JobStateMachineSpec extends Specification {
         then: 1 * jobStateListener.afterProcess(*_)
         then: 1 * jobStateListener.beforeWrite(*_)
         then: 1 * jobStateListener.afterWrite(*_)
-        then: 1 * jobStateListener.afterChunk(*_)
+        then: 1 * jobStateListener.afterChunk(*_) //<-- HERE
         then: 1 * jobStateListener.beforeChunk(*_)
         then: 1 * jobStateListener.beforeRead(*_)
         then: 1 * jobStateListener.afterLastRead()
+        then: 1 * jobStateListener.afterChunk(*_)
+        then: 1 * jobStateListener.afterStep(*_)
+        then: 1 * jobStateListener.afterJob(*_)
+        // @formatter:on
+    }
+
+    def "it should notify listener of process error - chunk size > 1"() {
+        given:
+        JobStateMachine stateMachine = JobStateMachine.idle(jobStateListener)
+
+        when:
+        play(stateMachine, ['beforeJob', 'beforeStep', 'beforeChunk', 'beforeRead', 'afterRead', 'beforeRead',
+                            'afterRead', 'beforeProcess', 'onProcessError', 'afterChunkError', 'beforeChunk',
+                            'beforeProcess', 'afterProcess', 'beforeWrite', 'afterWrite', 'onSkipInProcess',
+                            'afterChunk', 'beforeChunk', 'beforeRead', 'afterRead', 'beforeRead', 'afterRead',
+                            'beforeProcess', 'afterProcess', 'beforeProcess', 'afterProcess', 'beforeWrite',
+                            'afterWrite', 'afterChunk', 'beforeChunk', 'beforeRead', 'afterRead', 'beforeRead',
+                            'beforeProcess', 'afterProcess', 'beforeWrite', 'afterWrite', 'afterChunk', 'afterStep',
+                            'afterJob']
+
+        )
+
+        //multiple then blocks enforces the order of expectations
+        // @formatter:off
+        then: 1 * jobStateListener.beforeJob(*_)
+        then: 1 * jobStateListener.beforeStep(*_)
+        then: 1 * jobStateListener.beforeChunk(*_)
+        then: 1 * jobStateListener.beforeRead(*_)
+        then: 1 * jobStateListener.afterRead(*_)
+        then: 1 * jobStateListener.beforeRead(*_)
+        then: 1 * jobStateListener.afterRead(*_)
+        then: 1 * jobStateListener.beforeProcess(*_)
+        then: 1 * jobStateListener.onProcessError(*_)
+        then: 1 * jobStateListener.afterChunkError(*_)
+        then: 1 * jobStateListener.beforeChunk(*_)
+        then: 1 * jobStateListener.beforeChunkWriteErrorReProcess()
+        then: 0 * jobStateListener.beforeProcess(*_)
+        then: 0 * jobStateListener.afterProcess(*_)
+        then: 0 * jobStateListener.beforeWrite(*_)
+        then: 0 * jobStateListener.afterWrite(*_)
+        then: 1 * jobStateListener.onSkipInProcess(*_)
+        then: 1 * jobStateListener.afterChunkWriteErrorReProcess()
+        then: 1 * jobStateListener.afterChunk(*_)
+        then: 1 * jobStateListener.beforeChunk(*_)
+        then: 1 * jobStateListener.beforeRead(*_)
+        then: 1 * jobStateListener.afterRead(*_)
+        then: 1 * jobStateListener.beforeRead(*_)
+        then: 1 * jobStateListener.afterRead(*_)
+        then: 1 * jobStateListener.beforeProcess(*_)
+        then: 1 * jobStateListener.afterProcess(*_)
+        then: 1 * jobStateListener.beforeProcess(*_)
+        then: 1 * jobStateListener.afterProcess(*_)
+        then: 1 * jobStateListener.beforeWrite(*_)
+        then: 1 * jobStateListener.afterWrite(*_)
+        then: 1 * jobStateListener.afterChunk(*_)
+        then: 1 * jobStateListener.beforeChunk(*_)
+        then: 1 * jobStateListener.beforeRead(*_)
+        then: 1 * jobStateListener.afterRead(*_)
+        then: 1 * jobStateListener.beforeRead(*_)
+        then: 1 * jobStateListener.beforeProcess(*_)
+        then: 1 * jobStateListener.afterProcess(*_)
+        then: 1 * jobStateListener.beforeWrite(*_)
+        then: 1 * jobStateListener.afterWrite(*_)
         then: 1 * jobStateListener.afterChunk(*_)
         then: 1 * jobStateListener.afterStep(*_)
         then: 1 * jobStateListener.afterJob(*_)
@@ -160,31 +225,34 @@ class JobStateMachineSpec extends Specification {
         then: 1 * jobStateListener.beforeProcess(*_)
         then: 1 * jobStateListener.afterProcess(*_)
         then: 1 * jobStateListener.beforeWrite(*_)
-        then: 1 * jobStateListener.onWriteError(*_) // <-use this one to start state change
+        then: 1 * jobStateListener.onWriteError(*_)
         then: 1 * jobStateListener.afterChunkError(*_)
+        then: 1 * jobStateListener.beforeChunk(*_)
         then: 1 * jobStateListener.beforeChunkWriteErrorReProcess()
         // I intend to swallow these events.
 
         //remember to record last chunk params to re emit on read
 
-//        then: 1 * jobStateListener.beforeChunk(*_)
-//        then: 1 * jobStateListener.beforeProcess(*_)
-//        then: 1 * jobStateListener.afterProcess(*_)
-        then: 1 * jobStateListener.beforeWrite(*_)
+        then: 0 * jobStateListener.beforeProcess(*_)
+        then: 0 * jobStateListener.afterProcess(*_)
+        then: 0 * jobStateListener.beforeWrite(*_)
         then: 1 * jobStateListener.onWriteError(*_)
-//        then: 1 * jobStateListener.afterChunkError(*_)
-//        then: 1 * jobStateListener.beforeChunk(*_)
-//        then: 1 * jobStateListener.beforeProcess(*_)
-//        then: 1 * jobStateListener.afterProcess(*_)
-        then: 1 * jobStateListener.beforeWrite(*_)
-        then: 1 * jobStateListener.afterWrite(*_)
-        then: 1 * jobStateListener.onSkipInWrite(*_)
-//        then: 1 * jobStateListener.afterChunk(*_)
-//        then: 1 * jobStateListener.beforeChunk(*_)
-//        then: 1 * jobStateListener.beforeRead(*_) <-- this marks the start of a new chunk read and the end or re process
+//        then: 1 * jobStateListener.onSkipInWrite(*_)
         then: 1 * jobStateListener.afterChunkWriteErrorReProcess()
+        then: 1 * jobStateListener.afterChunkError(*_)
         then: 1 * jobStateListener.beforeChunk(*_)
-        then: 1 * jobStateListener.beforeRead(*_)
+        then: 1 * jobStateListener.beforeChunkWriteErrorReProcess()
+
+        then: 0 * jobStateListener.beforeProcess(*_)
+        then: 0 * jobStateListener.afterProcess(*_)
+        then: 0 * jobStateListener.beforeWrite(*_)
+        then: 0 * jobStateListener.afterWrite(*_)
+
+        then: 1 * jobStateListener.onSkipInWrite(*_)
+        then: 1 * jobStateListener.afterChunkWriteErrorReProcess()
+        then: 1 * jobStateListener.afterChunk(*_)
+        then: 1 * jobStateListener.beforeChunk(*_)
+        then: 1 * jobStateListener.beforeRead(*_) //<-- this marks the start of a new chunk read and the end or re process
         then: 1 * jobStateListener.afterRead(*_)
         then: 1 * jobStateListener.beforeRead(*_)
         then: 1 * jobStateListener.afterRead(*_)
@@ -234,21 +302,23 @@ class JobStateMachineSpec extends Specification {
         then: 1 * jobStateListener.beforeWrite(*_)
         then: 1 * jobStateListener.onWriteError(*_)
         then: 1 * jobStateListener.afterChunkError(*_)
+        then: 1 * jobStateListener.beforeChunk(*_)
         then: 1 * jobStateListener.beforeChunkWriteErrorReProcess()
-//        then: 1 * jobStateListener.beforeChunk(*_)
-//        then: 1 * jobStateListener.beforeProcess(*_)
-//        then: 1 * jobStateListener.afterProcess(*_)
-        then: 1 * jobStateListener.beforeWrite(*_)
+        then: 0 * jobStateListener.beforeProcess(*_)
+        then: 0 * jobStateListener.afterProcess(*_)
+        then: 0 * jobStateListener.beforeWrite(*_)
         then: 1 * jobStateListener.onWriteError(*_)
-//        then: 1 * jobStateListener.afterChunkError(*_)
-//        then: 1 * jobStateListener.beforeChunk(*_)
-//        then: 1 * jobStateListener.beforeProcess(*_)
-//        then: 1 * jobStateListener.afterProcess(*_)
-        then: 1 * jobStateListener.beforeWrite(*_)
-        then: 1 * jobStateListener.afterWrite(*_)
+        then: 1 * jobStateListener.afterChunkWriteErrorReProcess(*_)
+        then: 1 * jobStateListener.afterChunkError(*_)
+        then: 1 * jobStateListener.beforeChunk(*_)
+        then: 1 * jobStateListener.beforeChunkWriteErrorReProcess()
+        then: 0 * jobStateListener.beforeProcess(*_)
+        then: 0 * jobStateListener.afterProcess(*_)
+        then: 0 * jobStateListener.beforeWrite(*_)
+        then: 0 * jobStateListener.afterWrite(*_)
         then: 1 * jobStateListener.onSkipInWrite(*_)
-//        then: 1 * jobStateListener.afterChunk(*_)
         then: 1 * jobStateListener.afterChunkWriteErrorReProcess()
+        then: 1 * jobStateListener.afterChunk(*_)
         then: 1 * jobStateListener.afterStep(*_)
         then: 1 * jobStateListener.afterJob(*_)
         // @formatter:on
@@ -264,6 +334,7 @@ class JobStateMachineSpec extends Specification {
         ].withDefault { 0 }
 
         events.each {
+//            println("emitting: $it")
             if (argsCount[it] == 0)
                 jobStateMachine."$it"()
             else
@@ -272,35 +343,46 @@ class JobStateMachineSpec extends Specification {
     }
 
     public static void main(String[] args) {
-        def split = """2018-04-05 12:07:26.036 [main] INFO  - beforeJob  
-2018-04-05 12:07:26.054 [main] INFO  - beforeStep  
-2018-04-05 12:07:26.071 [main] INFO  - beforeChunk  
-2018-04-05 12:07:26.072 [main] INFO  - beforeRead  
-2018-04-05 12:07:26.074 [main] INFO  - afterRead  
-2018-04-05 12:07:26.074 [main] INFO  - beforeRead  
-2018-04-05 12:07:26.074 [main] INFO  - afterRead  
-2018-04-05 12:07:26.074 [main] INFO  - beforeRead  
-2018-04-05 12:07:26.077 [main] INFO  - beforeProcess  
-2018-04-05 12:07:26.081 [main] INFO  - afterProcess  
-2018-04-05 12:07:26.081 [main] INFO  - beforeProcess  
-2018-04-05 12:07:26.081 [main] INFO  - afterProcess  
-2018-04-05 12:07:26.082 [main] INFO  - beforeWrite  
-2018-04-05 12:07:26.092 [main] INFO  - onWriteError  
-2018-04-05 12:07:26.093 [main] INFO  - afterChunkError  
-2018-04-05 12:07:26.094 [main] INFO  - beforeChunk  
-2018-04-05 12:07:26.094 [main] INFO  - beforeProcess  
-2018-04-05 12:07:26.094 [main] INFO  - afterProcess  
-2018-04-05 12:07:26.097 [main] INFO  - onWriteError  
-2018-04-05 12:07:26.097 [main] INFO  - afterChunkError  
-2018-04-05 12:07:26.098 [main] INFO  - beforeChunk  
-2018-04-05 12:07:26.098 [main] INFO  - beforeProcess  
-2018-04-05 12:07:26.098 [main] INFO  - afterProcess  
-2018-04-05 12:07:26.098 [main] INFO  - afterWrite  
-2018-04-05 12:07:26.099 [main] INFO  - onSkipInWrite  
-2018-04-05 12:07:26.100 [main] INFO  - afterChunk  
-2018-04-05 12:07:26.100 [main] INFO  - afterStep  
-2018-04-05 12:07:26.103 [main] INFO  - afterJob     
-""".split("\n")
+        def split = """2018-04-10 14:08:24.516 [main] INFO  - beforeJob  
+2018-04-10 14:08:24.528 [main] INFO  - beforeStep  
+2018-04-10 14:08:24.538 [main] INFO  - beforeChunk  
+2018-04-10 14:08:24.540 [main] INFO  - beforeRead  
+2018-04-10 14:08:24.541 [main] INFO  - afterRead  
+2018-04-10 14:08:24.542 [main] INFO  - beforeRead  
+2018-04-10 14:08:24.542 [main] INFO  - afterRead  
+2018-04-10 14:08:24.548 [main] INFO  - beforeProcess  
+2018-04-10 14:08:24.554 [main] INFO  - onProcessError  
+2018-04-10 14:08:24.555 [main] INFO  - afterChunkError  
+2018-04-10 14:08:24.556 [main] INFO  - beforeChunk  
+2018-04-10 14:08:24.556 [main] INFO  - beforeProcess  
+2018-04-10 14:08:24.557 [main] INFO  - afterProcess  
+2018-04-10 14:08:24.558 [main] INFO  - beforeWrite  
+2018-04-10 14:08:24.560 [main] INFO  - afterWrite  
+2018-04-10 14:08:24.561 [main] INFO  - onSkipInProcess  
+2018-04-10 14:08:24.564 [main] INFO  - afterChunk  
+2018-04-10 14:08:24.565 [main] INFO  - beforeChunk  
+2018-04-10 14:08:24.565 [main] INFO  - beforeRead  
+2018-04-10 14:08:24.565 [main] INFO  - afterRead  
+2018-04-10 14:08:24.565 [main] INFO  - beforeRead  
+2018-04-10 14:08:24.565 [main] INFO  - afterRead  
+2018-04-10 14:08:24.565 [main] INFO  - beforeProcess  
+2018-04-10 14:08:24.565 [main] INFO  - afterProcess  
+2018-04-10 14:08:24.565 [main] INFO  - beforeProcess  
+2018-04-10 14:08:24.565 [main] INFO  - afterProcess  
+2018-04-10 14:08:24.565 [main] INFO  - beforeWrite  
+2018-04-10 14:08:24.565 [main] INFO  - afterWrite  
+2018-04-10 14:08:24.567 [main] INFO  - afterChunk  
+2018-04-10 14:08:24.568 [main] INFO  - beforeChunk  
+2018-04-10 14:08:24.568 [main] INFO  - beforeRead  
+2018-04-10 14:08:24.568 [main] INFO  - afterRead  
+2018-04-10 14:08:24.568 [main] INFO  - beforeRead  
+2018-04-10 14:08:24.568 [main] INFO  - beforeProcess  
+2018-04-10 14:08:24.568 [main] INFO  - afterProcess  
+2018-04-10 14:08:24.568 [main] INFO  - beforeWrite  
+2018-04-10 14:08:24.568 [main] INFO  - afterWrite  
+2018-04-10 14:08:24.570 [main] INFO  - afterChunk  
+2018-04-10 14:08:24.570 [main] INFO  - afterStep  
+2018-04-10 14:08:24.572 [main] INFO  - afterJob""".split("\n")
                 .collect { it.replaceAll(".* - ", '') }
 //                .collect { "'${it.trim()}'" }
                 .collect { "then: 1 * jobStateListener.${it.trim()}(*_)" }

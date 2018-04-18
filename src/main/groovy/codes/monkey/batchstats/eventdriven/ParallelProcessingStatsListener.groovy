@@ -1,7 +1,7 @@
-package codes.monkey.batchstats
+package codes.monkey.batchstats.eventdriven
 
-import codes.monkey.batchstats.statemachine.BatchListener
-import codes.monkey.batchstats.statemachine.JobStateMachine
+import codes.monkey.batchstats.eventdriven.statemachine.BatchListener
+import codes.monkey.batchstats.eventdriven.statemachine.JobStateMachine
 import com.codahale.metrics.MetricRegistry
 import org.springframework.batch.core.ExitStatus
 import org.springframework.batch.core.JobExecution
@@ -11,7 +11,7 @@ import org.springframework.batch.core.scope.context.ChunkContext
 /**
  * @author Johan Zietsman (jzietsman@thoughtworks.com.au).
  */
-class ParallelProcessingStatsListener implements  BatchListener {
+class ParallelProcessingStatsListener implements BatchListener {
 
     private MetricRegistry metricRegistry
     private volatile StatsNamespace parentNamespace = new StatsNamespace()
@@ -25,7 +25,7 @@ class ParallelProcessingStatsListener implements  BatchListener {
     ParallelProcessingStatsListener(MetricRegistry metricRegistry, Closure afterJobCallback) {
         this.metricRegistry = metricRegistry
         jobLevelState = JobStateMachine.idle(
-                new StatsListener(metricRegistry, parentNamespace, afterJobCallback )
+                new StatsListener(metricRegistry, parentNamespace, afterJobCallback)
         )
     }
 

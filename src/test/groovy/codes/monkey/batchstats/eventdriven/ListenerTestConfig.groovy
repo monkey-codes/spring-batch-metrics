@@ -1,5 +1,6 @@
-package codes.monkey.batchstats
+package codes.monkey.batchstats.eventdriven
 
+import codes.monkey.batchstats.StatsConfig
 import org.springframework.batch.core.configuration.annotation.DefaultBatchConfigurer
 import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing
 import org.springframework.batch.core.configuration.annotation.JobBuilderFactory

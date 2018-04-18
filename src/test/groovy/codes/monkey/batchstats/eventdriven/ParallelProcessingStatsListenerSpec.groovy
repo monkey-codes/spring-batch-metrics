@@ -1,8 +1,7 @@
-package codes.monkey.batchstats
+package codes.monkey.batchstats.eventdriven
 
 import com.codahale.metrics.MetricRegistry
 import com.codahale.metrics.ScheduledReporter
-import org.hamcrest.Matchers
 import org.springframework.batch.core.BatchStatus
 import org.springframework.batch.core.Job
 import org.springframework.batch.core.JobExecution
@@ -20,12 +19,10 @@ import org.springframework.test.annotation.DirtiesContext
 import org.springframework.test.context.ContextConfiguration
 import spock.lang.Specification
 
-import static codes.monkey.batchstats.StatsEventsGrabber.combineLastEvents
-import static codes.monkey.batchstats.StatsEventsGrabber.lastEvent
-import static codes.monkey.batchstats.StatsListenerSpec.exceptionOn
-import static codes.monkey.batchstats.StatsListenerSpec.hasCount
+import static StatsEventsGrabber.combineLastEvents
+import static StatsEventsGrabber.lastEvent
+import static StatsListenerSpec.hasCount
 import static org.hamcrest.Matchers.allOf
-import static org.hamcrest.Matchers.greaterThanOrEqualTo
 import static org.hamcrest.Matchers.greaterThanOrEqualTo
 import static spock.util.matcher.HamcrestSupport.expect
 
@@ -117,7 +114,7 @@ class ParallelProcessingStatsListenerSpec extends Specification {
         /*
         * Need state machine to deal with write errors, once chunks are reduced to lists of 1 after a write error
         * only afterWrite
-        * Turns out on multi threaded processing, the same thread that detects the write error is not reponsible
+        * Turns out on multi threaded processing, the same thread that detects the write error is not responsible
         * for the chunk reprocessing, these could be spread over several threads.  My next approach will be to change
         * how re processing is detected. onWriteError cannot be used anymore. The only solution I can think of is
         * to make the state machine states more finely grained and then detect a beforeChunk->beforeProcess and call
@@ -181,65 +178,5 @@ class ParallelProcessingStatsListenerSpec extends Specification {
                             .build()
             ).build()
         }
-    }
-
-    public static void main(String[] args) {
-        def collect = """2018-04-09 09:41:08.959 [main] INFO  - beforeJob  
-2018-04-09 09:41:09.016 [main] INFO  - beforeStep  
-2018-04-09 09:41:09.027 [taskExecutor-3] INFO  - beforeChunk  
-2018-04-09 09:41:09.027 [taskExecutor-4] INFO  - beforeChunk  
-2018-04-09 09:41:09.027 [taskExecutor-1] INFO  - beforeChunk  
-2018-04-09 09:41:09.027 [taskExecutor-2] INFO  - beforeChunk  
-2018-04-09 09:41:09.037 [taskExecutor-1] INFO  - beforeRead  
-2018-04-09 09:41:09.037 [taskExecutor-3] INFO  - beforeRead  
-2018-04-09 09:41:09.037 [taskExecutor-4] INFO  - beforeRead  
-2018-04-09 09:41:09.037 [taskExecutor-2] INFO  - beforeRead  
-2018-04-09 09:41:09.043 [taskExecutor-3] INFO  - afterRead  
-2018-04-09 09:41:09.043 [taskExecutor-4] INFO  - afterRead  
-2018-04-09 09:41:09.043 [taskExecutor-2] INFO  - afterRead  
-2018-04-09 09:41:09.043 [taskExecutor-1] INFO  - afterRead  
-2018-04-09 09:41:09.049 [taskExecutor-2] INFO  - beforeRead  
-2018-04-09 09:41:09.049 [taskExecutor-1] INFO  - beforeRead  
-2018-04-09 09:41:09.049 [taskExecutor-3] INFO  - beforeRead  
-2018-04-09 09:41:09.049 [taskExecutor-1] INFO  - afterRead  
-2018-04-09 09:41:09.050 [taskExecutor-1] INFO  - beforeRead  
-2018-04-09 09:41:09.049 [taskExecutor-4] INFO  - beforeRead  
-2018-04-09 09:41:09.053 [taskExecutor-3] INFO  - beforeProcess  
-2018-04-09 09:41:09.053 [taskExecutor-2] INFO  - beforeProcess  
-2018-04-09 09:41:09.053 [taskExecutor-1] INFO  - beforeProcess  
-2018-04-09 09:41:09.053 [taskExecutor-4] INFO  - beforeProcess  
-2018-04-09 09:41:09.059 [taskExecutor-1] INFO  - afterProcess  
-2018-04-09 09:41:09.059 [taskExecutor-4] INFO  - afterProcess  
-2018-04-09 09:41:09.059 [taskExecutor-2] INFO  - afterProcess  
-2018-04-09 09:41:09.059 [taskExecutor-3] INFO  - afterProcess  
-2018-04-09 09:41:09.060 [taskExecutor-1] INFO  - beforeProcess  
-2018-04-09 09:41:09.060 [taskExecutor-1] INFO  - afterProcess  
-2018-04-09 09:41:09.061 [taskExecutor-1] INFO  - beforeWrite  
-2018-04-09 09:41:09.061 [taskExecutor-3] INFO  - beforeWrite  
-2018-04-09 09:41:09.061 [taskExecutor-2] INFO  - beforeWrite  
-2018-04-09 09:41:09.061 [taskExecutor-4] INFO  - beforeWrite  
-2018-04-09 09:41:09.067 [taskExecutor-1] INFO  - afterWrite  
-2018-04-09 09:41:09.068 [taskExecutor-4] INFO  - afterWrite  
-2018-04-09 09:41:09.068 [taskExecutor-2] INFO  - afterWrite  
-2018-04-09 09:41:09.070 [taskExecutor-3] INFO  - onWriteError  
-2018-04-09 09:41:09.071 [taskExecutor-2] INFO  - afterChunk  
-2018-04-09 09:41:09.072 [taskExecutor-5] INFO  - beforeChunk  
-2018-04-09 09:41:09.072 [taskExecutor-4] INFO  - afterChunk  
-2018-04-09 09:41:09.073 [taskExecutor-5] INFO  - beforeRead  
-2018-04-09 09:41:09.074 [taskExecutor-1] INFO  - afterChunk  
-2018-04-09 09:41:09.076 [taskExecutor-5] INFO  - afterChunk  
-2018-04-09 09:41:09.077 [taskExecutor-3] INFO  - afterChunkError  
-2018-04-09 09:41:09.081 [taskExecutor-2] INFO  - beforeChunk  
-2018-04-09 09:41:09.082 [taskExecutor-2] INFO  - beforeProcess  
-2018-04-09 09:41:09.082 [taskExecutor-2] INFO  - afterProcess  
-2018-04-09 09:41:09.084 [taskExecutor-2] INFO  - onWriteError  
-2018-04-09 09:41:09.085 [taskExecutor-2] INFO  - afterChunkError"""
-                .split("\n")
-                .findAll { it.contains("taskExecutor-2") }
-                .collect { it.replaceAll(".* - ", '') }
-//                .collect { "'${it.trim()}'" }
-                .collect { "then: 1 * jobStateListener.${it.trim()}(*_)" }
-        println collect.join("\n")
-//        println collect.join(",")
     }
 }

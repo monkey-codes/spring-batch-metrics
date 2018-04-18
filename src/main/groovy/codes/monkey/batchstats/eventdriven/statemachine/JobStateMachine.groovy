@@ -1,6 +1,6 @@
-package codes.monkey.batchstats.statemachine
+package codes.monkey.batchstats.eventdriven.statemachine
 
-import codes.monkey.batchstats.StatsListener
+import codes.monkey.batchstats.eventdriven.StatsListener
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.batch.core.ExitStatus
@@ -74,18 +74,6 @@ class JobStateMachine implements BatchListener {
             listener.afterJob(jobExecution)
             updateState(new Idle())
         }
-
-//        @Override
-//        void beforeRead() {
-//            listener.beforeRead()
-//            updateState(new Reading())
-//        }
-//
-//        @Override
-//        void onWriteError(Exception exception, List items) {
-//            listener.onWriteError(exception, items)
-//            updateState(new WriteError())
-//        }
 
     }
 
@@ -227,14 +215,8 @@ class JobStateMachine implements BatchListener {
 
     class ChunkReprocess extends BatchListenerSupport {
 
-//        ChunkContext lastAfterChunkContext
-//        ChunkContext lastBeforeChunkContext
-//        String afterChunkEvent
-
         @Override
         void afterChunkError(ChunkContext context) {
-//            lastAfterChunkContext = context
-//            swallowEvent('afterChunkError', context)
             listener.afterChunkWriteErrorReProcess()
             listener.afterChunkError(context)
             updateState(new JobRunning())
@@ -242,20 +224,17 @@ class JobStateMachine implements BatchListener {
 
         @Override
         void beforeChunk(ChunkContext context) {
-//            this.lastBeforeChunkContext = context
             swallowEvent('beforeChunk', context)
         }
 
         @Override
         void beforeProcess(Object item) {
             listener.beforeProcess(item)
-//            swallowEvent('beforeProcess', item)
         }
 
         @Override
         void afterProcess(Object item, Object result) {
             listener.afterProcess(item, result)
-//            swallowEvent('afterProcess', item, result)
         }
 
         @Override
@@ -267,7 +246,6 @@ class JobStateMachine implements BatchListener {
         void onWriteError(Exception exception, List items) {
             //we don't know if a beforeWrite was fired so this will unbalance the event interface
             swallowEvent('onWriteError', exception, items)
-//            listener.onWriteError(exception, items)
         }
 
         @Override
@@ -282,12 +260,9 @@ class JobStateMachine implements BatchListener {
 
         @Override
         void afterChunk(ChunkContext context) {
-            //cache the last context since we have to emit that once reprocess is done.
-//            lastAfterChunkContext = context
             listener.afterChunkWriteErrorReProcess()
             listener.afterChunk(context)
             updateState(new JobRunning())
-//            swallowEvent('afterChunk', context)
         }
 
         @Override
@@ -299,26 +274,6 @@ class JobStateMachine implements BatchListener {
         void onSkipInProcess(Object item, Throwable t) {
             listener.onSkipInProcess(item, t)
         }
-
-//        @Override
-//        void beforeRead() {
-//            listener.afterChunkWriteErrorReProcess()
-//            listener."$afterChunkEvent"(lastAfterChunkContext)
-//            listener.beforeChunk(lastBeforeChunkContext)
-//            lastAfterChunkContext = null
-//            listener.beforeRead()
-//            updateState(new Reading())
-//        }
-//
-//        @Override
-//        ExitStatus afterStep(StepExecution stepExecution) {
-//            listener.afterChunkWriteErrorReProcess()
-//            def exitStatus = listener.afterStep(stepExecution)
-//            lastAfterChunkContext = null
-//            lastBeforeChunkContext = null
-//            updateState(new JobRunning())
-//            exitStatus
-//        }
 
         void swallowEvent(Object... args) {
         }

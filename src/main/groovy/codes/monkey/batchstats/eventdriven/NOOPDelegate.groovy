@@ -1,4 +1,4 @@
-package codes.monkey.batchstats
+package codes.monkey.batchstats.eventdriven
 
 /**
  * @author Johan Zietsman (jzietsman@thoughtworks.com.au).

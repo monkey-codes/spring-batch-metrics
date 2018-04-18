@@ -1,12 +1,9 @@
 package codes.monkey.batchstats
 
+import codes.monkey.batchstats.eventdriven.StatsListener
 import com.codahale.metrics.MetricRegistry
-import com.codahale.metrics.Reporter
 import com.codahale.metrics.ScheduledReporter
 import com.codahale.metrics.Slf4jReporter
-import com.codahale.metrics.jvm.CachedThreadStatesGaugeSet
-import com.codahale.metrics.jvm.GarbageCollectorMetricSet
-import com.codahale.metrics.jvm.MemoryUsageGaugeSet
 import org.slf4j.LoggerFactory
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration

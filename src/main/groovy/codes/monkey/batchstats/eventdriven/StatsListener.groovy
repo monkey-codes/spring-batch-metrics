@@ -1,6 +1,6 @@
-package codes.monkey.batchstats
+package codes.monkey.batchstats.eventdriven
 
-import codes.monkey.batchstats.statemachine.JobStateListener
+import codes.monkey.batchstats.eventdriven.statemachine.JobStateListener
 import com.codahale.metrics.MetricRegistry
 import com.codahale.metrics.Timer
 import org.springframework.batch.core.ExitStatus

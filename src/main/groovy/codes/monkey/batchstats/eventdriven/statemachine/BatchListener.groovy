@@ -1,4 +1,4 @@
-package codes.monkey.batchstats.statemachine
+package codes.monkey.batchstats.eventdriven.statemachine
 
 import org.springframework.batch.core.ExitStatus
 import org.springframework.batch.core.JobExecution

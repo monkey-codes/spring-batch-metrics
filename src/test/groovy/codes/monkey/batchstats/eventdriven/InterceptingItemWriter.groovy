@@ -1,4 +1,4 @@
-package codes.monkey.batchstats
+package codes.monkey.batchstats.eventdriven
 
 import org.springframework.batch.item.ItemWriter
 

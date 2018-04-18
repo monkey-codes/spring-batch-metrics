@@ -1,6 +1,6 @@
-package codes.monkey.batchstats
+package codes.monkey.batchstats.eventdriven
 
-import codes.monkey.batchstats.statemachine.JobStateMachine
+import codes.monkey.batchstats.eventdriven.statemachine.JobStateMachine
 import com.codahale.metrics.MetricRegistry
 import com.codahale.metrics.ScheduledReporter
 import org.hamcrest.Description
@@ -22,8 +22,8 @@ import org.springframework.test.annotation.DirtiesContext
 import org.springframework.test.context.ContextConfiguration
 import spock.lang.Specification
 
-import static codes.monkey.batchstats.StatsEventsGrabber.combineLastEvents
-import static codes.monkey.batchstats.StatsEventsGrabber.lastEvent
+import static StatsEventsGrabber.combineLastEvents
+import static StatsEventsGrabber.lastEvent
 import static org.hamcrest.Matchers.allOf
 import static org.hamcrest.Matchers.greaterThanOrEqualTo
 import static org.hamcrest.Matchers.hasEntry

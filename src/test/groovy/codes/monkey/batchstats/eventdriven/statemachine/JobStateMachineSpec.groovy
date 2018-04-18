@@ -1,4 +1,4 @@
-package codes.monkey.batchstats.statemachine
+package codes.monkey.batchstats.eventdriven.statemachine
 
 import spock.lang.Specification
 
@@ -81,8 +81,6 @@ class JobStateMachineSpec extends Specification {
         then: 1 * jobStateListener.afterChunk(*_)
         then: 1 * jobStateListener.afterStep(*_)
         then: 1 * jobStateListener.afterJob(*_)
-//        then:
-//        _ * _
         // @formatter:on
     }
 
@@ -229,15 +227,13 @@ class JobStateMachineSpec extends Specification {
         then: 1 * jobStateListener.afterChunkError(*_)
         then: 1 * jobStateListener.beforeChunk(*_)
         then: 1 * jobStateListener.beforeChunkWriteErrorReProcess()
-        // I intend to swallow these events.
-
-        //remember to record last chunk params to re emit on read
 
         then: 1 * jobStateListener.beforeProcess(*_)
         then: 1 * jobStateListener.afterProcess(*_)
+        // I intend to swallow these events.
+
         then: 0 * jobStateListener.beforeWrite(*_)
         then: 0 * jobStateListener.onWriteError(*_)
-//        then: 1 * jobStateListener.onSkipInWrite(*_)
         then: 1 * jobStateListener.afterChunkWriteErrorReProcess()
         then: 1 * jobStateListener.afterChunkError(*_)
         then: 1 * jobStateListener.beforeChunk(*_)
@@ -334,7 +330,6 @@ class JobStateMachineSpec extends Specification {
         ].withDefault { 0 }
 
         events.each {
-//            println("emitting: $it")
             if (argsCount[it] == 0)
                 jobStateMachine."$it"()
             else
@@ -342,51 +337,4 @@ class JobStateMachineSpec extends Specification {
         }
     }
 
-    public static void main(String[] args) {
-        def split = """2018-04-10 14:08:24.516 [main] INFO  - beforeJob  
-2018-04-10 14:08:24.528 [main] INFO  - beforeStep  
-2018-04-10 14:08:24.538 [main] INFO  - beforeChunk  
-2018-04-10 14:08:24.540 [main] INFO  - beforeRead  
-2018-04-10 14:08:24.541 [main] INFO  - afterRead  
-2018-04-10 14:08:24.542 [main] INFO  - beforeRead  
-2018-04-10 14:08:24.542 [main] INFO  - afterRead  
-2018-04-10 14:08:24.548 [main] INFO  - beforeProcess  
-2018-04-10 14:08:24.554 [main] INFO  - onProcessError  
-2018-04-10 14:08:24.555 [main] INFO  - afterChunkError  
-2018-04-10 14:08:24.556 [main] INFO  - beforeChunk  
-2018-04-10 14:08:24.556 [main] INFO  - beforeProcess  
-2018-04-10 14:08:24.557 [main] INFO  - afterProcess  
-2018-04-10 14:08:24.558 [main] INFO  - beforeWrite  
-2018-04-10 14:08:24.560 [main] INFO  - afterWrite  
-2018-04-10 14:08:24.561 [main] INFO  - onSkipInProcess  
-2018-04-10 14:08:24.564 [main] INFO  - afterChunk  
-2018-04-10 14:08:24.565 [main] INFO  - beforeChunk  
-2018-04-10 14:08:24.565 [main] INFO  - beforeRead  
-2018-04-10 14:08:24.565 [main] INFO  - afterRead  
-2018-04-10 14:08:24.565 [main] INFO  - beforeRead  
-2018-04-10 14:08:24.565 [main] INFO  - afterRead  
-2018-04-10 14:08:24.565 [main] INFO  - beforeProcess  
-2018-04-10 14:08:24.565 [main] INFO  - afterProcess  
-2018-04-10 14:08:24.565 [main] INFO  - beforeProcess  
-2018-04-10 14:08:24.565 [main] INFO  - afterProcess  
-2018-04-10 14:08:24.565 [main] INFO  - beforeWrite  
-2018-04-10 14:08:24.565 [main] INFO  - afterWrite  
-2018-04-10 14:08:24.567 [main] INFO  - afterChunk  
-2018-04-10 14:08:24.568 [main] INFO  - beforeChunk  
-2018-04-10 14:08:24.568 [main] INFO  - beforeRead  
-2018-04-10 14:08:24.568 [main] INFO  - afterRead  
-2018-04-10 14:08:24.568 [main] INFO  - beforeRead  
-2018-04-10 14:08:24.568 [main] INFO  - beforeProcess  
-2018-04-10 14:08:24.568 [main] INFO  - afterProcess  
-2018-04-10 14:08:24.568 [main] INFO  - beforeWrite  
-2018-04-10 14:08:24.568 [main] INFO  - afterWrite  
-2018-04-10 14:08:24.570 [main] INFO  - afterChunk  
-2018-04-10 14:08:24.570 [main] INFO  - afterStep  
-2018-04-10 14:08:24.572 [main] INFO  - afterJob""".split("\n")
-                .collect { it.replaceAll(".* - ", '') }
-//                .collect { "'${it.trim()}'" }
-                .collect { "then: 1 * jobStateListener.${it.trim()}(*_)" }
-//        println(split)
-        println(split.join("\n"))
-    }
 }

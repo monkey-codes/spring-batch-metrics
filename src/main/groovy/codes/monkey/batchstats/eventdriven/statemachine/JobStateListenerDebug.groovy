@@ -1,4 +1,4 @@
-package codes.monkey.batchstats.statemachine
+package codes.monkey.batchstats.eventdriven.statemachine
 
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory

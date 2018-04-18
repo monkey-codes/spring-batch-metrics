@@ -1,4 +1,4 @@
-package codes.monkey.batchstats.statemachine
+package codes.monkey.batchstats.eventdriven.statemachine
 /**
  * @author Johan Zietsman (jzietsman@thoughtworks.com.au).
  */

@@ -11,7 +11,7 @@ class StatsNamespace {
     String currentNamespace = ""
     StatsNamespace parent
 
-    StatsNamespace(StatsNamespace parent){
+    StatsNamespace(StatsNamespace parent) {
         this.parent = parent
     }
 
@@ -22,15 +22,15 @@ class StatsNamespace {
 
     private StatsNamespace updateCurrent() {
         //TODO improve the reverse thingy
-        if(stack.isEmpty() && parent) {
+        if (stack.isEmpty() && parent) {
             currentNamespace = parent.name()
             return this
         }
 
         def tempNamespace = new ArrayList<>(stack).reverse().stream().collect(Collectors.joining("."))
-        if(parent){
-            currentNamespace = parent.name()+"."+tempNamespace
-        }else{
+        if (parent) {
+            currentNamespace = parent.name() + "." + tempNamespace
+        } else {
             currentNamespace = tempNamespace
         }
         this
@@ -42,16 +42,12 @@ class StatsNamespace {
     }
 
 
-    String name(){
+    String name() {
         currentNamespace
     }
 
     @Override
     String toString() {
         currentNamespace
-    }
-
-    String leaf() {
-        stack.peek()
     }
 }

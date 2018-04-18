@@ -1,7 +1,5 @@
 package codes.monkey.batchstats
 
-import com.codahale.metrics.MetricRegistry
-import com.codahale.metrics.Timer
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.batch.core.JobExecution
@@ -18,7 +16,7 @@ class ThreadDebugListener {
 
     def delegate
 
-    ThreadDebugListener(){
+    ThreadDebugListener() {
         this(new NOOPDelegate())
     }
 
@@ -46,25 +44,25 @@ class ThreadDebugListener {
     }
 
     @AfterStep
-    void afterStep(StepExecution stepExecution){
+    void afterStep(StepExecution stepExecution) {
         LOG.info("afterStep")
         this.delegate.afterStep(stepExecution)
     }
 
     @BeforeChunk
-    void beforeChunk(ChunkContext context){
+    void beforeChunk(ChunkContext context) {
         LOG.info("beforeChunk")
         this.delegate.beforeChunk(context)
     }
 
     @AfterChunk
-    void afterChunk(ChunkContext context){
+    void afterChunk(ChunkContext context) {
         LOG.info("afterChunk")
         this.delegate.afterChunk(context)
     }
 
     @AfterChunkError
-    void afterChunkError(ChunkContext context){
+    void afterChunkError(ChunkContext context) {
         LOG.info("afterChunkError")
         this.delegate.afterChunkError(context)
     }
@@ -82,13 +80,13 @@ class ThreadDebugListener {
     }
 
     @OnReadError
-    void onReadError(Exception e){
+    void onReadError(Exception e) {
         LOG.info("onReadError")
         this.delegate.onReadError(e)
     }
 
     @OnSkipInRead
-    void onSkipInRead(Exception e){
+    void onSkipInRead(Exception e) {
         LOG.info("onSkipInRead")
         this.delegate.onSkipInRead(e)
     }
@@ -100,19 +98,19 @@ class ThreadDebugListener {
     }
 
     @AfterProcess
-    void afterProcess(Object item, Object result){
+    void afterProcess(Object item, Object result) {
         LOG.info("afterProcess")
         this.delegate.afterProcess(item, result)
     }
 
     @OnProcessError
-    void onProcessError(Object item, Exception e){
+    void onProcessError(Object item, Exception e) {
         LOG.info("onProcessError")
         this.delegate.onProcessError(item, e)
     }
 
     @OnSkipInProcess
-    void onSkipInProcess(Object item, Exception e){
+    void onSkipInProcess(Object item, Exception e) {
         LOG.info("onSkipInProcess")
         this.delegate.onSkipInProcess(item, e)
     }
@@ -143,11 +141,4 @@ class ThreadDebugListener {
         this.delegate.onSkipInWrite(item, ex)
     }
 
-//    static class NOOPDelegate {
-//
-//        def methodMissing(String name, args) {
-//            // Intercept method that starts with find.
-//            this.metaClass."$name" = {->}
-//        }
-//    }
 }

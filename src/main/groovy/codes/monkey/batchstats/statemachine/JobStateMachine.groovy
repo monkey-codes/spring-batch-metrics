@@ -23,7 +23,7 @@ class JobStateMachine implements BatchListener {
         this.listener = listener
     }
 
-    private void updateState(BatchListener newState){
+    private void updateState(BatchListener newState) {
         def from = currentState == null ? 'null' : currentState.getClass().simpleName
         def to = newState.getClass().simpleName
         LOG.debug "$from -> $to"
@@ -148,6 +148,11 @@ class JobStateMachine implements BatchListener {
         }
 
         @Override
+        void onSkipInRead(Throwable t) {
+            listener.onSkipInRead(t)
+        }
+
+        @Override
         void beforeProcess(Object item) {
             listener.afterLastRead()
             listener.beforeProcess(item)
@@ -157,7 +162,7 @@ class JobStateMachine implements BatchListener {
         @Override
         void onReadError(Exception ex) {
             listener.onReadError(ex)
-             updateState(new ChunkRunning())
+            updateState(new ChunkRunning())
         }
     }
 
@@ -249,7 +254,7 @@ class JobStateMachine implements BatchListener {
 
         @Override
         void afterProcess(Object item, Object result) {
-              listener.afterProcess(item, result)
+            listener.afterProcess(item, result)
 //            swallowEvent('afterProcess', item, result)
         }
 

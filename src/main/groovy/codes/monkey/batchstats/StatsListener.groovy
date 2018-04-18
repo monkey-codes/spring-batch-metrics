@@ -72,7 +72,6 @@ class StatsListener implements JobStateListener {
             throw new IllegalStateException("timer stack is not empty!")
         }
         afterJobCallback(jobExecution)
-//        Thread.sleep(6000) //nasty allow the metrics reporter 1 last chance to report.
     }
 
     @Override

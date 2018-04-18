@@ -20,10 +20,12 @@ import org.springframework.test.annotation.DirtiesContext
 import org.springframework.test.context.ContextConfiguration
 import spock.lang.Specification
 
+import static codes.monkey.batchstats.StatsEventsGrabber.combineLastEvents
 import static codes.monkey.batchstats.StatsEventsGrabber.lastEvent
 import static codes.monkey.batchstats.StatsListenerSpec.exceptionOn
 import static codes.monkey.batchstats.StatsListenerSpec.hasCount
 import static org.hamcrest.Matchers.allOf
+import static org.hamcrest.Matchers.greaterThanOrEqualTo
 import static org.hamcrest.Matchers.greaterThanOrEqualTo
 import static spock.util.matcher.HamcrestSupport.expect
 
@@ -91,7 +93,6 @@ class ParallelProcessingStatsListenerSpec extends Specification {
     @DirtiesContext
     def "it should deal with errors"() {
         given:
-
         reader.list = (1..5).collect()
         this."$errorOn".transform = StatsListenerSpec.exceptionOn(*errorItem)
 
@@ -102,16 +103,16 @@ class ParallelProcessingStatsListenerSpec extends Specification {
         jobExecution.status == BatchStatus.COMPLETED
         expect statsEventsGrabber, allOf(
                 lastEvent('job.step1.chunk.read', hasCount(readCount)),
-                lastEvent('job.step1.chunk.process', hasCount(processCount)),
+                combineLastEvents('job.step1.chunk.process,job.step1.chunk.reprocess.process', hasCount(processCount)),
                 lastEvent('job.step1.chunk.write', hasCount(greaterThanOrEqualTo(writeCount))),
-//                lastEvent("job.step1.chunk.${errorEvent}.error", hasCount(1))
+                lastEvent("job.step1.chunk.${errorEvent}.error", hasCount(1))
         )
 
         where:
-        errorOn                     | errorItem       | errorEvent | readCount | processCount | writeCount
-        'interceptingItemReader'    | [1]             | 'read'     | 4         | 4            | 1
-        'interceptingItemProcessor' | [2]             | 'process'  | 5         | 4            | 1
-        'interceptingItemWriter'    | [2]             | 'write'    | 5         | 5            | 0
+        errorOn                     | errorItem       | errorEvent | readCount | processCount                    | writeCount
+        'interceptingItemReader'    | [1]             | 'read'     | 4         | 4                               | 1
+        'interceptingItemProcessor' | [2]             | 'process'  | 5         | 4                               | 1
+        'interceptingItemWriter'    | [2]             | 'write'    | 5         | greaterThanOrEqualTo(5)   | 0
 
         /*
         * Need state machine to deal with write errors, once chunks are reduced to lists of 1 after a write error
@@ -163,7 +164,6 @@ class ParallelProcessingStatsListenerSpec extends Specification {
                 InterceptingItemWriter writer, MetricRegistry metricRegistry, ScheduledReporter reporter) {
             def statsListener =
                     new ParallelProcessingStatsListener(metricRegistry, { reporter.report() })
-
 
 //            def statsListener = new ThreadDebugListener()
             jobBuilderFactory

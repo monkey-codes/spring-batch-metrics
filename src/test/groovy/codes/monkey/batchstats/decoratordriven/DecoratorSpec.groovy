@@ -1,15 +1,13 @@
-package codes.monkey.batchstats.eventdriven
+package codes.monkey.batchstats.decoratordriven
 
-import codes.monkey.batchstats.eventdriven.statemachine.JobStateMachine
+import codes.monkey.batchstats.eventdriven.*
 import com.codahale.metrics.MetricRegistry
 import com.codahale.metrics.ScheduledReporter
-import org.hamcrest.Matcher
 import org.springframework.batch.core.BatchStatus
 import org.springframework.batch.core.Job
 import org.springframework.batch.core.JobExecution
 import org.springframework.batch.core.JobParameters
 import org.springframework.batch.core.launch.JobLauncher
-import org.springframework.batch.core.listener.JobListenerFactoryBean
 import org.springframework.batch.item.function.FunctionItemProcessor
 import org.springframework.batch.item.support.ListItemWriter
 import org.springframework.beans.factory.annotation.Autowired
@@ -19,19 +17,17 @@ import org.springframework.test.annotation.DirtiesContext
 import org.springframework.test.context.ContextConfiguration
 import spock.lang.Specification
 
-import static StatsEventsGrabber.combineLastEvents
-import static StatsEventsGrabber.lastEvent
 import static codes.monkey.batchstats.StatsMatchers.exceptionOn
 import static codes.monkey.batchstats.StatsMatchers.hasCount
+import static codes.monkey.batchstats.eventdriven.StatsEventsGrabber.lastEvent
 import static org.hamcrest.Matchers.allOf
-import static org.hamcrest.Matchers.greaterThanOrEqualTo
 import static spock.util.matcher.HamcrestSupport.expect
 
 /**
  * @author Johan Zietsman (jzietsman@thoughtworks.com.au).
  */
-@ContextConfiguration(classes = StatsListenerSpec.TestConfig)
-class StatsListenerSpec extends Specification {
+@ContextConfiguration(classes = DecoratorSpec.TestConfig)
+class DecoratorSpec extends Specification {
 
     @Autowired
     Job job
@@ -47,6 +43,9 @@ class StatsListenerSpec extends Specification {
 
     @Autowired
     InterceptingItemProcessor interceptingItemProcessor
+
+    @Autowired
+    ScheduledReporter scheduledReporter
 
     @Autowired
     InterceptingItemWriter interceptingItemWriter
@@ -69,13 +68,14 @@ class StatsListenerSpec extends Specification {
 
         when:
         JobExecution jobExecution = jobLauncher.run(job, new JobParameters())
+        scheduledReporter.report()
 
         then:
         jobExecution.status == BatchStatus.COMPLETED
         expect statsEventsGrabber, allOf(
-                lastEvent('job.step1.chunk.read', hasCount(readCount)),
-                lastEvent('job.step1.chunk.process', hasCount(processCount)),
-                lastEvent('job.step1.chunk.write', hasCount(writeCount))
+                lastEvent('read', hasCount(readCount)),
+                lastEvent('process', hasCount(processCount)),
+                lastEvent('write', hasCount(writeCount))
         )
 
         where:
@@ -94,49 +94,30 @@ class StatsListenerSpec extends Specification {
 
         when:
         JobExecution jobExecution = jobLauncher.run(job, new JobParameters())
+        scheduledReporter.report()
 
         then:
         jobExecution.status == BatchStatus.COMPLETED
         expect statsEventsGrabber, allOf(
-                lastEvent('job.step1.chunk.read', hasCount(readCount)),
-                combineLastEvents('job.step1.chunk.process,job.step1.chunk.reprocess.process', hasCount(processCount)),
-                lastEvent('job.step1.chunk.write', hasCount(writeCount)),
-                lastEvent("job.step1.chunk.${errorEvent}.error", hasCount(1)),
-                expectations
+                lastEvent('read', hasCount(readCount)),
+                lastEvent('process', hasCount(processCount)),
+                lastEvent('write', hasCount(writeCount)),
+                lastEvent(errorEvent, hasCount(errorCount))
         )
 
         where:
-        errorOn                     | errorItem   | errorEvent | readCount | processCount                    | writeCount | expectations
-        'interceptingItemReader'    | [1]           | 'read'     | 4         | 4                             | 1          | readError(1)
-        'interceptingItemProcessor' | [4]           | 'process'  | 5         | greaterThanOrEqualTo(4) | 0          | processError(1)
-        'interceptingItemWriter'    | [2]           | 'write'    | 5         | 10                            | 0          | writeError(1)
+        errorOn                        | errorItem      | readCount | processCount | writeCount | errorEvent      | errorCount
+        'interceptingItemReader'       | [1]            | 4         | 4            | 1          | 'read.error'    | 1
+        // 1st item fails no chunk reprocess
+        'interceptingItemProcessor'    | [2]            | 5         | 4            | 1          | 'process.error' | 1
+        //chunk reprocess, item 1 goes twice
+        'interceptingItemProcessor'    | [4]            | 5         | 5            | 1          | 'process.error' | 1
+        /*on write error chunks of 1 is written and the items are reprocessed for each new chunk
+          error count will also be 2 since it fires once on the initial chunk and once during reprocess
+        */
+        'interceptingItemWriter'       | [2]            | 5          | 10          | 4          | 'write.error'   | 2
 
-        /*
-        * Need state machine to deal with write errors, once chunks are reduced to lists of 1 after a write error
-        * only afterWrite*/
     }
-
-
-    static Matcher<StatsEventsGrabber> writeError(count) {
-        allOf(
-                lastEvent('job.step1.chunk.write.error', hasCount(count))
-        )
-    }
-
-    static Matcher<StatsEventsGrabber> readError(skipCount) {
-        skipError('job.step1.chunk.read.skip', skipCount)
-    }
-
-    static Matcher<StatsEventsGrabber> processError(skipCount) {
-        skipError('job.step1.chunk.reprocess.process.skip', skipCount)
-    }
-
-    private static Matcher<StatsEventsGrabber> skipError(String s, skipCount) {
-        allOf(
-                lastEvent(s, hasCount(skipCount))
-        )
-    }
-
 
     @TestConfiguration
     static class TestConfig extends ListenerTestConfig {
@@ -163,22 +144,16 @@ class StatsListenerSpec extends Specification {
 
         @Bean
         Job job(InterceptingItemReader reader, InterceptingItemProcessor processor,
-                InterceptingItemWriter writer, MetricRegistry metricRegistry, ScheduledReporter reporter) {
-            def statsListener = JobStateMachine.idle(
-                    new StatsListener(metricRegistry, { reporter.report() })
-            )
-
+                InterceptingItemWriter writer, MetricRegistry metricRegistry) {
             jobBuilderFactory
                     .get("job")
-                    .listener(JobListenerFactoryBean.getListener(statsListener))
                     .start(
                     stepBuilderFactory.get("step1")
                             .chunk(10)
-                            .faultTolerant().skip(Throwable).skipLimit(Integer.MAX_VALUE).listener(statsListener as Object)
-                            .reader(reader)
-                            .processor(processor)
-                            .writer(writer)
-                            .listener(statsListener as Object)
+                            .faultTolerant().skip(Throwable).skipLimit(Integer.MAX_VALUE)
+                            .reader(new MetricReader(reader, metricRegistry))
+                            .processor(new MetricProcessor(processor, metricRegistry))
+                            .writer(new MetricWriter(writer, metricRegistry))
                             .build()
             ).build()
         }

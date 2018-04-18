@@ -1,5 +1,6 @@
 package codes.monkey.batchstats.eventdriven
 
+import codes.monkey.batchstats.StatsMatchers
 import com.codahale.metrics.MetricRegistry
 import com.codahale.metrics.ScheduledReporter
 import org.springframework.batch.core.BatchStatus
@@ -21,7 +22,7 @@ import spock.lang.Specification
 
 import static StatsEventsGrabber.combineLastEvents
 import static StatsEventsGrabber.lastEvent
-import static StatsListenerSpec.hasCount
+import static codes.monkey.batchstats.StatsMatchers.*
 import static org.hamcrest.Matchers.allOf
 import static org.hamcrest.Matchers.greaterThanOrEqualTo
 import static spock.util.matcher.HamcrestSupport.expect
@@ -91,7 +92,7 @@ class ParallelProcessingStatsListenerSpec extends Specification {
     def "it should deal with errors"() {
         given:
         reader.list = (1..5).collect()
-        this."$errorOn".transform = StatsListenerSpec.exceptionOn(*errorItem)
+        this."$errorOn".transform = StatsMatchers.exceptionOn(*errorItem)
 
         when:
         JobExecution jobExecution = jobLauncher.run(job, new JobParameters())

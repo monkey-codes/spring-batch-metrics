@@ -17,7 +17,7 @@ class SynchronizedItemReader<T> implements ItemReader<T> {
     }
 
     @Override
-    synchronized  T read() throws Exception, UnexpectedInputException, ParseException, NonTransientResourceException {
+    synchronized T read() throws Exception, UnexpectedInputException, ParseException, NonTransientResourceException {
         return delegate.read()
     }
 }

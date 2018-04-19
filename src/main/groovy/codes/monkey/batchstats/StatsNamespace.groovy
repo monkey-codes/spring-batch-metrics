@@ -1,4 +1,4 @@
-package codes.monkey.batchstats.eventdriven
+package codes.monkey.batchstats
 
 import java.util.stream.Collectors
 
@@ -26,14 +26,17 @@ class StatsNamespace {
             currentNamespace = parent.name()
             return this
         }
-
         def tempNamespace = new ArrayList<>(stack).reverse().stream().collect(Collectors.joining("."))
-        if (parent) {
+        if (parent && !parent.isEmpty()) {
             currentNamespace = parent.name() + "." + tempNamespace
         } else {
             currentNamespace = tempNamespace
         }
         this
+    }
+
+    boolean isEmpty() {
+        stack.isEmpty()
     }
 
     StatsNamespace pop() {

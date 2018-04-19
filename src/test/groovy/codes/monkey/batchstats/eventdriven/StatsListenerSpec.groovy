@@ -106,10 +106,10 @@ class StatsListenerSpec extends Specification {
         )
 
         where:
-        errorOn                     | errorItem   | errorEvent | readCount | processCount                    | writeCount | expectations
-        'interceptingItemReader'    | [1]           | 'read'     | 4         | 4                             | 1          | readError(1)
-        'interceptingItemProcessor' | [4]           | 'process'  | 5         | greaterThanOrEqualTo(4) | 0          | processError(1)
-        'interceptingItemWriter'    | [2]           | 'write'    | 5         | 10                            | 0          | writeError(1)
+        errorOn                     | errorItem | errorEvent | readCount | processCount            | writeCount | expectations
+        'interceptingItemReader'    | [1]       | 'read'     | 4         | 4                       | 1          | readError(1)
+        'interceptingItemProcessor' | [4]       | 'process'  | 5         | greaterThanOrEqualTo(4) | 0          | processError(1)
+        'interceptingItemWriter'    | [2]       | 'write'    | 5         | 10                      | 0          | writeError(1)
 
         /*
         * Need state machine to deal with write errors, once chunks are reduced to lists of 1 after a write error

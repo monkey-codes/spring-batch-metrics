@@ -8,6 +8,7 @@ import org.springframework.batch.core.Job
 import org.springframework.batch.core.JobExecution
 import org.springframework.batch.core.JobParameters
 import org.springframework.batch.core.launch.JobLauncher
+import org.springframework.batch.core.listener.JobListenerFactoryBean
 import org.springframework.batch.item.function.FunctionItemProcessor
 import org.springframework.batch.item.support.ListItemWriter
 import org.springframework.beans.factory.annotation.Autowired
@@ -73,9 +74,9 @@ class DecoratorSpec extends Specification {
         then:
         jobExecution.status == BatchStatus.COMPLETED
         expect statsEventsGrabber, allOf(
-                lastEvent('read', hasCount(readCount)),
-                lastEvent('process', hasCount(processCount)),
-                lastEvent('write', hasCount(writeCount))
+                lastEvent('job.step1.read', hasCount(readCount)),
+                lastEvent('job.step1.process', hasCount(processCount)),
+                lastEvent('job.step1.write', hasCount(writeCount))
         )
 
         where:
@@ -99,23 +100,23 @@ class DecoratorSpec extends Specification {
         then:
         jobExecution.status == BatchStatus.COMPLETED
         expect statsEventsGrabber, allOf(
-                lastEvent('read', hasCount(readCount)),
-                lastEvent('process', hasCount(processCount)),
-                lastEvent('write', hasCount(writeCount)),
-                lastEvent(errorEvent, hasCount(errorCount))
+                lastEvent('job.step1.read', hasCount(readCount)),
+                lastEvent('job.step1.process', hasCount(processCount)),
+                lastEvent('job.step1.write', hasCount(writeCount)),
+                lastEvent("job.step1.$errorEvent", hasCount(errorCount))
         )
 
         where:
-        errorOn                        | errorItem      | readCount | processCount | writeCount | errorEvent      | errorCount
-        'interceptingItemReader'       | [1]            | 4         | 4            | 1          | 'read.error'    | 1
+        errorOn                     | errorItem | readCount | processCount | writeCount | errorEvent      | errorCount
+        'interceptingItemReader'    | [1]       | 4         | 4            | 1          | 'read.error'    | 1
         // 1st item fails no chunk reprocess
-        'interceptingItemProcessor'    | [2]            | 5         | 4            | 1          | 'process.error' | 1
+        'interceptingItemProcessor' | [2]       | 5         | 4            | 1          | 'process.error' | 1
         //chunk reprocess, item 1 goes twice
-        'interceptingItemProcessor'    | [4]            | 5         | 5            | 1          | 'process.error' | 1
+        'interceptingItemProcessor' | [4]       | 5         | 5            | 1          | 'process.error' | 1
         /*on write error chunks of 1 is written and the items are reprocessed for each new chunk
           error count will also be 2 since it fires once on the initial chunk and once during reprocess
         */
-        'interceptingItemWriter'       | [2]            | 5          | 10          | 4          | 'write.error'   | 2
+        'interceptingItemWriter'    | [2]       | 5         | 10           | 4          | 'write.error'   | 2
 
     }
 
@@ -145,15 +146,18 @@ class DecoratorSpec extends Specification {
         @Bean
         Job job(InterceptingItemReader reader, InterceptingItemProcessor processor,
                 InterceptingItemWriter writer, MetricRegistry metricRegistry) {
+            def factory = new DecoratorFactory(metricRegistry)
             jobBuilderFactory
                     .get("job")
+                    .listener(JobListenerFactoryBean.getListener(factory))
                     .start(
                     stepBuilderFactory.get("step1")
                             .chunk(10)
                             .faultTolerant().skip(Throwable).skipLimit(Integer.MAX_VALUE)
-                            .reader(new MetricReader(reader, metricRegistry))
-                            .processor(new MetricProcessor(processor, metricRegistry))
-                            .writer(new MetricWriter(writer, metricRegistry))
+                            .reader(factory.metricReader(reader))
+                            .processor(factory.metricProcessor(processor))
+                            .writer(factory.metricWriter(writer))
+                            .listener(factory as Object)
                             .build()
             ).build()
         }

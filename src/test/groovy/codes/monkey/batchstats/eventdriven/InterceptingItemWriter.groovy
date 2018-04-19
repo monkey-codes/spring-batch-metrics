@@ -9,7 +9,7 @@ class InterceptingItemWriter<T> implements ItemWriter<T> {
 
     private ItemWriter<T> delegate
 
-    def transform = {it}
+    def transform = { it }
 
 
     InterceptingItemWriter(ItemWriter<T> delegate) {

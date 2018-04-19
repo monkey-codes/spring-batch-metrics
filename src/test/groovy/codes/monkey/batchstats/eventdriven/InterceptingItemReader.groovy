@@ -11,7 +11,7 @@ import org.springframework.batch.item.UnexpectedInputException
 class InterceptingItemReader<T> implements ItemReader<T> {
 
     private ItemReader<T> delegate
-    def transform = {it}
+    def transform = { it }
 
     InterceptingItemReader(ItemReader<T> delegate) {
         this.delegate = delegate

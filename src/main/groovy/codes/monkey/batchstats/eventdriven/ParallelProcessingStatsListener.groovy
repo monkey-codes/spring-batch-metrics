@@ -1,5 +1,6 @@
 package codes.monkey.batchstats.eventdriven
 
+import codes.monkey.batchstats.StatsNamespace
 import codes.monkey.batchstats.eventdriven.statemachine.BatchListener
 import codes.monkey.batchstats.eventdriven.statemachine.JobStateMachine
 import com.codahale.metrics.MetricRegistry

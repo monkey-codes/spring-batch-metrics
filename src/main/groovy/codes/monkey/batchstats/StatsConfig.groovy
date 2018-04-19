@@ -17,7 +17,7 @@ import java.util.concurrent.TimeUnit
 class StatsConfig {
 
     @Bean
-    MetricRegistry metricRegistry(){
+    MetricRegistry metricRegistry() {
         return new MetricRegistry().with {
 //            register("gc", new GarbageCollectorMetricSet())
 //            register("threads", new CachedThreadStatesGaugeSet(10, TimeUnit.SECONDS))
@@ -27,7 +27,7 @@ class StatsConfig {
     }
 
     @Bean
-    ScheduledReporter reporter(MetricRegistry metricRegistry){
+    ScheduledReporter reporter(MetricRegistry metricRegistry) {
         def reporter = Slf4jReporter.forRegistry(metricRegistry)
                 .outputTo(LoggerFactory.getLogger(StatsListener.class.name))
                 .convertRatesTo(TimeUnit.SECONDS)

@@ -9,7 +9,7 @@ class InterceptingItemProcessor<I, O> implements ItemProcessor<I, O> {
 
     private ItemProcessor<I, O> delegate
 
-    def transform = {it}
+    def transform = { it }
 
     InterceptingItemProcessor(ItemProcessor<I, O> delegate) {
         this.delegate = delegate

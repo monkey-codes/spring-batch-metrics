@@ -22,7 +22,7 @@ import spock.lang.Specification
 
 import static StatsEventsGrabber.combineLastEvents
 import static StatsEventsGrabber.lastEvent
-import static codes.monkey.batchstats.StatsMatchers.*
+import static codes.monkey.batchstats.StatsMatchers.hasCount
 import static org.hamcrest.Matchers.allOf
 import static org.hamcrest.Matchers.greaterThanOrEqualTo
 import static spock.util.matcher.HamcrestSupport.expect
@@ -107,10 +107,10 @@ class ParallelProcessingStatsListenerSpec extends Specification {
         )
 
         where:
-        errorOn                     | errorItem       | errorEvent | readCount | processCount                    | writeCount
-        'interceptingItemReader'    | [1]             | 'read'     | 4         | 4                               | 1
-        'interceptingItemProcessor' | [2]             | 'process'  | 5         | 4                               | 1
-        'interceptingItemWriter'    | [2]             | 'write'    | 5         | greaterThanOrEqualTo(5)   | 0
+        errorOn                     | errorItem | errorEvent | readCount | processCount            | writeCount
+        'interceptingItemReader'    | [1]       | 'read'     | 4         | 4                       | 1
+        'interceptingItemProcessor' | [2]       | 'process'  | 5         | 4                       | 1
+        'interceptingItemWriter'    | [2]       | 'write'    | 5         | greaterThanOrEqualTo(5) | 0
 
         /*
         * Need state machine to deal with write errors, once chunks are reduced to lists of 1 after a write error

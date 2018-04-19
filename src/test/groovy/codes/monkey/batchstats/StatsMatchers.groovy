@@ -10,10 +10,10 @@ import org.hamcrest.TypeSafeMatcher
  */
 class StatsMatchers {
 
-    static Closure exceptionOn(...errorOnItem) {
+    static Closure exceptionOn(... errorOnItem) {
         { item ->
             if (item instanceof List) {
-                if (item.any {errorOnItem.contains(it)})
+                if (item.any { errorOnItem.contains(it) })
                     throw new RuntimeException("fake writer error")
                 return item
             }

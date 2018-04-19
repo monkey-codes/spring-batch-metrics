@@ -27,7 +27,7 @@ class StatsEventsGrabber {
     Map<String, String> lastEvent(String name) {
         def loggingEvent = Collections.unmodifiableList(listAppender.list).reverse()
                 .find { it.formattedMessage.contains("name=$name,") }
-        if (loggingEvent == null) return ["key":"nullMap","count":"0"]
+        if (loggingEvent == null) return ["key": "nullMap", "count": "0"]
         def properties = new Properties()
         properties.load(new StringReader(loggingEvent.formattedMessage.replace(', ', '\n')))
         new HashMap<>(properties)
@@ -74,7 +74,7 @@ class StatsEventsGrabber {
                 names.split(",")
                         .collect {
                     item.lastEvent(it.trim())
-                }.inject([:]) { Map<String, String>result, i ->
+                }.inject([:]) { Map<String, String> result, i ->
                     i.each { k, v ->
                         if (!v.isNumber()) return result
                         def accumelator = new BigDecimal((result[k] ?: '0') as String)

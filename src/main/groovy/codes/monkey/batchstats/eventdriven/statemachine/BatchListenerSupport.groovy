@@ -10,7 +10,7 @@ import org.springframework.batch.core.scope.context.ChunkContext
  */
 class BatchListenerSupport implements BatchListener {
 
-    def defaultHandler = {Object... args -> throw new IllegalStateException("${this.getClass().name}: ${args[0]}")}
+    def defaultHandler = { Object... args -> throw new IllegalStateException("${this.getClass().name}: ${args[0]}") }
 
     @Override
     void beforeJob(JobExecution jobExecution) {

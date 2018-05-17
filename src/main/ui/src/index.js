@@ -5,26 +5,7 @@ import 'bootstrap/dist/js/bootstrap.min';
 import 'keen-dataviz/dist/keen-dataviz.min.css';
 import Keen from 'keen-dataviz';
 
-function component() {
-  var element = document.createElement('div');
-
-  // Lodash, now imported by this script
-  element.innerHTML = _.join(['Hello', 'webpack'], ' ');
-  element.classList.add('hello');
-
-  return element;
-}
-
-document.body.appendChild(component());
-
 function line(){
-  //window.Keen = Keen;
-  console.log('here');
-  window.TryThis = Keen;
-  console.log(Keen);
-  //console.log(Keen.Dataviz);
-  //console.log(Keen.Dataviz);
-  //var chart = new Keen.Dataviz()
   var chart = new Keen()
     .el('.test')
     .colors(['red', 'orange', 'green'])
@@ -65,7 +46,5 @@ function line(){
     .data(data)
     .render();
 }
-setTimeout(function(){
-  line()
-}, 2000)
+line();
 

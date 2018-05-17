@@ -8,20 +8,36 @@ module.exports = {
   entry: {
     app: './src/index.js'
   },
+  mode: 'development',
+  //devtool: 'inline-source-map',
+  devServer: {
+    contentBase: './dist'
+  },
   plugins:[
     new CleanWebpackPlugin(['dist']),
     new HtmlWebpackPlugin({
       title: 'Output Management',
-      inlineSource: '.(js|css)$',
+      inlineSourceBak: '.(js|css)$',
       template: 'index.html'
     }),
-    new HtmlWebpackInlineSourcePlugin(),
+    //new HtmlWebpackInlineSourcePlugin(),
     new webpack.ProvidePlugin({
       $: 'jquery',
       jQuery: 'jquery',
       'window.jQuery': 'jquery'
     })
   ],
+  optimization: {
+        splitChunks: {
+            cacheGroups: {
+                commons: {
+                    test: /[\\/]node_modules[\\/]/,
+                    name: "vendors",
+                    chunks: "all"
+                }
+            }
+        }
+  },
   output: {
     filename: '[name].bundle.js',
     path: path.resolve(__dirname, 'dist')

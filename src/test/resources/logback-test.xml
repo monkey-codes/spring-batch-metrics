@@ -5,11 +5,13 @@
 
     <appender name="STATS" class="ch.qos.logback.core.ConsoleAppender">
         <withJansi>true</withJansi>
-        <encoder>
-            <pattern>%d{${LOG_DATEFORMAT_PATTERN:-yyyy-MM-dd HH:mm:ss.SSS}} [%thread] %highlight(%-5level) - %msg  %n</pattern>
+        <!--<encoder>-->
+            <!--<pattern>%d{${LOG_DATEFORMAT_PATTERN:-yyyy-MM-dd HH:mm:ss.SSS}} [%thread] %highlight(%-5level) - %msg  %n</pattern>-->
+        <!--</encoder>-->
+        <encoder class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">
+            <layout class="codes.monkey.batchstats.htmlreport.JsonReportDataLayout" />
         </encoder>
     </appender>
-
 
     <logger name="org.springframework" level="ERROR"/>
 

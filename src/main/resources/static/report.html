@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Layouts &raquo; Thirds Grid</title>
+    <meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no' />
+
+    <!-- Demo Dependencies -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.3/jquery.min.js" type="text/javascript"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.2.0/js/bootstrap.min.js" type="text/javascript"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.2.0/css/bootstrap.min.css" rel="stylesheet" type="text/css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/holder/2.3.2/holder.min.js" type="text/javascript"></script>
+    <script>
+        Holder.add_theme("white", { background:"#fff", foreground:"#a7a7a7", size:10 });
+    </script>
+
+    <!-- keen-analysis@1.2.2 -->
+    <script src="https://d26b395fwzu5fz.cloudfront.net/keen-analysis-1.2.2.js" type="text/javascript"></script>
+
+    <!-- keen-dataviz@1.1.3 -->
+    <link href="https://d26b395fwzu5fz.cloudfront.net/keen-dataviz-1.1.3.css" rel="stylesheet" />
+    <script src="https://d26b395fwzu5fz.cloudfront.net/keen-dataviz-1.1.3.js" type="text/javascript"></script>
+
+    <script src="https://unpkg.com/rxjs/bundles/rxjs.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.22.1/moment.min.js"></script>
+    <!-- Dashboard -->
+    <!--<link rel="stylesheet" type="text/css" href="../../assets/css/keen-dashboards.css">-->
+    <!--<link href="https://cdnjs.cloudflare.com/ajax/libs/c3/0.5.4/c3.min.css" rel="stylesheet" type="text/css" />-->
+    <!--<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/4.13.0/d3.min.js" type="text/javascript"></script>-->
+    <!--<script src="https://cdnjs.cloudflare.com/ajax/libs/c3/0.5.4/c3.min.js" type="text/javascript"></script>-->
+    <style>
+        .keen-dashboard {
+            background: #f2f2f2;
+            font-family: 'Gotham Rounded SSm A', 'Gotham Rounded SSm B', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+        }
+
+        .keen-dataviz {
+            background: #fff;
+            border: 1px solid #e7e7e7;
+            border-radius: 2px;
+            box-sizing: border-box;
+        }
+        .keen-dataviz-title {
+            border-bottom: 1px solid #e7e7e7;
+            border-radius: 2px 2px 0 0;
+            font-size: 13px;
+            padding: 2px 10px 0;
+            text-transform: uppercase;
+        }
+        .keen-dataviz-stage {
+            padding: 10px;
+        }
+
+        .keen-dataviz-notes {
+            background: #fbfbfb;
+            border-radius: 0 0 2px 2px;
+            border-top: 1px solid #e7e7e7;
+            font-family: 'Helvetica Neue', Helvetica, sans-serif;
+            font-size: 11px;
+            padding: 0 10px;
+        }
+
+        .keen-dataviz .keen-dataviz-metric {
+            border-radius: 2px;
+        }
+
+        .keen-dataviz .keen-spinner-indicator {
+            border-top-color: rgba(0, 187, 222, .4);
+        }
+
+        .keen-dashboard .chart-wrapper {
+            background: #fff;
+            border: 1px solid #e2e2e2;
+            border-radius: 3px;
+            margin-bottom: 10px;
+        }
+        .keen-dashboard .chart-wrapper .chart-title {
+            border-bottom: 1px solid #d7d7d7;
+            color: #666;
+            font-size: 14px;
+            font-weight: 200;
+            padding: 7px 10px 4px;
+        }
+
+        .keen-dashboard .chart-wrapper .chart-stage {
+            overflow: hidden;
+            padding: 5px 10px;
+            position: relative;
+        }
+
+        .keen-dashboard .chart-wrapper .chart-notes {
+            background: #fbfbfb;
+            border-top: 1px solid #e2e2e2;
+            color: #808080;
+            font-size: 12px;
+            padding: 8px 10px 5px;
+        }
+
+        .keen-dashboard .chart-wrapper .keen-dataviz,
+        .keen-dashboard .chart-wrapper .keen-dataviz-title,
+        .keen-dashboard .chart-stage .chart-title {
+            border: medium none;
+        }
+    </style>
+</head>
+<body class="keen-dashboard" style="padding-top: 80px;">
+
+<div class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+    <div class="container-fluid">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="../">
+                <span class="glyphicon glyphicon-chevron-left"></span>
+            </a>
+            <a class="navbar-brand" href="./">Layouts &raquo; Thirds Grid</a>
+        </div>
+        <div class="navbar-collapse collapse">
+            <ul class="nav navbar-nav navbar-left">
+                <li><a href="https://keen.io">Home</a></li>
+                <li><a href="https://keen.io/team">Team</a></li>
+                <li><a href="https://github.com/keenlabs/dashboards/tree/gh-pages/layouts/thirds-grid">Source</a></li>
+                <li><a href="https://groups.google.com/forum/#!forum/keen-io-devs">Community</a></li><li><a href="http://stackoverflow.com/questions/tagged/keen-io?sort=newest&pageSize=15">Technical Support</a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<div class="container-fluid">
+
+    <div class="row">
+        <div class="col-sm-6 col-md-4">
+            <div class="chart-wrapper">
+                <div class="chart-title">
+                    Cell Title
+                </div>
+                <div class="chart-stage">
+                    <div id="grid-1-1" class="test">
+                        <!--<img data-src="holder.js/100%x180/white/text:#grid-1-1">-->
+                    </div>
+                </div>
+                <div class="chart-notes">
+                    Notes about this chart
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-md-4">
+            <div class="chart-wrapper">
+                <div class="chart-title">
+                    Cell Title
+                </div>
+                <div class="chart-stage">
+                    <img data-src="holder.js/100%x180/white">
+                </div>
+                <div class="chart-notes">
+                    Notes about this chart
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-md-4">
+            <div class="chart-wrapper">
+                <div class="chart-title">
+                    Cell Title
+                </div>
+                <div class="chart-stage">
+                    <img data-src="holder.js/100%x180/white">
+                </div>
+                <div class="chart-notes">
+                    Notes about this chart
+                </div>
+            </div>
+        </div>
+
+        <div class="col-sm-6 col-md-4">
+            <div class="chart-wrapper">
+                <div class="chart-title">
+                    Cell Title
+                </div>
+                <div class="chart-stage">
+                    <img data-src="holder.js/100%x180/white">
+                </div>
+                <div class="chart-notes">
+                    Notes about this chart
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-md-4">
+            <div class="chart-wrapper">
+                <div class="chart-title">
+                    Cell Title
+                </div>
+                <div class="chart-stage">
+                    <img data-src="holder.js/100%x180/white">
+                </div>
+                <div class="chart-notes">
+                    Notes about this chart
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-md-4">
+            <div class="chart-wrapper">
+                <div class="chart-title">
+                    Cell Title
+                </div>
+                <div class="chart-stage">
+                    <img data-src="holder.js/100%x180/white">
+                </div>
+                <div class="chart-notes">
+                    Notes about this chart
+                </div>
+            </div>
+        </div>
+
+        <div class="col-sm-6 col-md-4">
+            <div class="chart-wrapper">
+                <div class="chart-title">
+                    Cell Title
+                </div>
+                <div class="chart-stage">
+                    <img data-src="holder.js/100%x180/white">
+                </div>
+                <div class="chart-notes">
+                    Notes about this chart
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-md-4">
+            <div class="chart-wrapper">
+                <div class="chart-title">
+                    Cell Title
+                </div>
+                <div class="chart-stage">
+                    <img data-src="holder.js/100%x180/white">
+                </div>
+                <div class="chart-notes">
+                    Notes about this chart
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-md-4">
+            <div class="chart-wrapper">
+                <div class="chart-title">
+                    Cell Title
+                </div>
+                <div class="chart-stage">
+                    <img data-src="holder.js/100%x180/white">
+                </div>
+                <div class="chart-notes">
+                    Notes about this chart
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+<div class="container-fluid">
+    <p class="small text-muted">Built with &#9829; by <a href="https://keen.io">Keen IO</a></p>
+</div>
+
+<script>
+    //https://keen.github.io/keen-dataviz.js/
+    //python3 -m http.server 8000
+    var map = rxjs.operators.map;
+    var groupBy = rxjs.operators.groupBy;
+    rxjs.ajax.ajax('test-data.json').subscribe(function(e){
+        rxjs.from(e.response)
+            .pipe(map(function(e){
+                e.time =  moment.unix(e.ts/1000).format("YYYY-MM-DDThh:mm:ss");
+                return e;
+            }))
+            .pipe(groupBy(function(e){return e.name;}))
+            .subscribe(console.log.bind(console))
+    });
+    function metric(){
+        var chart = new Keen.Dataviz()
+            .el('.test')
+            .colors(['red', 'orange', 'green'])
+            .height(180)
+            .title('New Customers per Week')
+            .type('metric')
+            .prepare();
+
+        chart
+            .data({ result: 621 })
+            .render();
+    }
+
+    function line(){
+        var chart = new Keen.Dataviz()
+            .el('.test')
+            .colors(['red', 'orange', 'green'])
+            .height(180)
+            .title('New Customers per Week')
+            .chartType('line')
+            .prepare();
+
+        var data2 = {
+            result: [{
+                value: 6,
+                timeframe: {start: "2016-08-01T07:00:00.000Z", end: "2016-08-08T07:00:00.000Z"}
+            }, {
+                value: 2,
+                timeframe: {start: "2016-08-08T07:00:00.000Z", end: "2016-08-15T07:00:00.000Z"}
+            }, {
+                value: 1,
+                timeframe: {start: "2016-08-15T07:00:00.000Z", end: "2016-08-22T07:00:00.000Z"}
+            }, {
+                value: 2,
+                timeframe: {start: "2016-08-22T07:00:00.000Z", end: "2016-08-29T07:00:00.000Z"}
+            }, {
+                value: 269,
+                timeframe: {start: "2016-08-29T07:00:00.000Z", end: "2016-09-05T07:00:00.000Z"}
+            }, {value: 14, timeframe: {start: "2016-09-05T07:00:00.000Z", end: "2016-09-12T07:00:00.000Z"}}]
+        };
+
+        var data = {
+            result: [
+                ['2016-08-01T07:00:00.000', 6],
+                ['2016-08-01T07:00:30.000', 2],
+                ['2016-08-01T07:01:00.000', 1],
+                ['2016-08-01T07:01:30.000', 269]
+            ]
+        };
+
+        chart
+                .data(data)
+            .render();
+    }
+
+    function pie(){
+        var chart = new Keen.Dataviz()
+            .el('.test')
+            .height(280)
+            .title('Red vs Blue')
+            .chartType('pie')
+            .prepare();
+
+        // Fetch data from another API or your own data source:
+        // Imaginary callback ...
+        var data = {
+            "result": [{
+                "color": "Blue",
+                "result": 2
+            }, {
+                "color": "Red",
+                "result": 1
+            }]
+        }
+
+        chart
+            .data(data)
+            .render();
+    }
+
+
+//    chart
+//        .data({
+//            columns: [
+//                ['data1', 30, 200, 100, 400, 150, 250],
+//                ['data2', 50, 20, 10, 40, 15, 25]
+//            ]
+//        })
+//        .render();
+
+</script>
+</body>
+</html>

@@ -4,6 +4,7 @@
   <meta http-equiv="Content-type" content="text/html; charset=utf-8"/>
   <title><%= htmlWebpackPlugin.options.title %></title>
   <meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no' />
+    <!-- $reportData -->
 </head>
 <body class="keen-dashboard" style="padding-top: 80px;">
 
@@ -18,20 +19,6 @@
 <div class="container-fluid">
 
   <div class="row">
-    <div class="col-sm-6 col-md-4">
-      <div class="chart-wrapper">
-        <div class="chart-title">
-          Cell Title
-        </div>
-        <div class="chart-stage">
-          <div id="grid-1-1" class="test">
-          </div>
-        </div>
-        <div class="chart-notes">
-          Notes about this chart
-        </div>
-      </div>
-    </div>
   </div>
 
 <div class="col-sm-6 col-md-4 template hidden">
@@ -40,18 +27,26 @@
           Template title
         </div>
         <div class="chart-stage">
-          <div class="graph">
-          </div>
-        </div>
-        <div class="chart-notes">
-          Template
+          <canvas width="428" height="180" class="graph"></canvas>
         </div>
       </div>
     </div>
 </div>
-<div class="container-fluid">
-  <p class="small text-muted">Built with &#9829; by <a href="https://keen.io">Keen IO</a></p>
+<div class="col-sm-6 col-md-4 metric-template hidden">
+      <div class="chart-wrapper">
+        <div class="chart-title">
+          Metric Template title
+        </div>
+        <div class="chart-stage metric-chart-stage">
+          <div class="metric-container">
+              <div class="metric"></div>
+              <div class="metric-label"></div>
+          </div>
+        </div>
+      </div>
+    </div>
 </div>
+
 
 </body>
 </html>

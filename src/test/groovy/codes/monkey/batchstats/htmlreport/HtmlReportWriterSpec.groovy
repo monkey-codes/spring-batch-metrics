@@ -45,7 +45,7 @@ class HtmlReportWriterSpec extends Specification {
         def output = outputStream.toString(CHARSET)
 
         then:
-        output.trim() == template.replace(dataPlaceholderToken, "$prefix\n$data\n$suffix").trim()
+        output.trim() == template.replace(dataPlaceholderToken, "$prefix\n${data.readLines().join(",\n")},\n$suffix").trim()
     }
 
     protected ByteArrayInputStream toInputStream(String s) {

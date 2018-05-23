@@ -1,5 +1,15 @@
-.hello {
-  color: red;
+.metric-container {
+  height: 180px;
+}
+.metric {
+  text-align: center;
+  font-size: 6em;
+  font-weight: 800;
+  color: rgb(54, 162, 235);
+}
+.metric-label {
+  text-align: center;
+  font-weight: 200;
 }
 
 .keen-dashboard {

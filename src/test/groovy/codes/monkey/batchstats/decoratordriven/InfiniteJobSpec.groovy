@@ -4,6 +4,7 @@ import codes.monkey.batchstats.eventdriven.InterceptingItemProcessor
 import codes.monkey.batchstats.eventdriven.InterceptingItemReader
 import codes.monkey.batchstats.eventdriven.InterceptingItemWriter
 import codes.monkey.batchstats.eventdriven.ListenerTestConfig
+import codes.monkey.batchstats.htmlreport.HtmlReportJobExecutionListener
 import com.codahale.metrics.MetricRegistry
 import com.codahale.metrics.ScheduledReporter
 import org.springframework.batch.core.BatchStatus
@@ -19,10 +20,15 @@ import org.springframework.batch.item.UnexpectedInputException
 import org.springframework.batch.item.function.FunctionItemProcessor
 import org.springframework.batch.item.support.ListItemWriter
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.test.context.TestConfiguration
 import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Configuration
+import org.springframework.context.annotation.Import
 import org.springframework.test.annotation.DirtiesContext
 import org.springframework.test.context.ContextConfiguration
+import org.springframework.test.context.TestPropertySource
+import spock.lang.Ignore
 import spock.lang.Specification
 
 /**
@@ -49,11 +55,12 @@ class InfiniteJobSpec extends Specification {
     @Autowired
     InterceptingItemWriter interceptingItemWriter
 
+    @Ignore
     @DirtiesContext
     def "run infinite job"() {
         given:
         def delay = randomDelay(100, 200)
-        interceptingItemReader.transform = { delay(); if (it < 10) throw new Exception("Read Error"); it }
+        interceptingItemReader.transform = { delay(); if (it && it < 10) throw new Exception("Read Error"); it }
         interceptingItemProcessor.transform = {
             delay(); if (it > 10 && it < 20) throw new Exception("Process Prror"); it
         }
@@ -79,9 +86,12 @@ class InfiniteJobSpec extends Specification {
         ItemReader infiniteReader() {
             new ItemReader<Integer>() {
                 Random random = new Random()
-
+                int counter = 0
                 @Override
                 Integer read() throws Exception, UnexpectedInputException, ParseException, NonTransientResourceException {
+                    if(counter++ == 300) {
+                        return null
+                    }
                     return random.nextInt(101)
                 }
             }
@@ -103,12 +113,20 @@ class InfiniteJobSpec extends Specification {
         }
 
         @Bean
+        HtmlReportJobExecutionListener htmlReportJobExecutionListener(){
+            new HtmlReportJobExecutionListener("/Users/johanz/git/monkey/batch-stats/build/metrics.json",
+            "/Users/johanz/git/monkey/batch-stats/build/report.html")
+        }
+
+        @Bean
         Job job(InterceptingItemReader reader, InterceptingItemProcessor processor,
-                InterceptingItemWriter writer, MetricRegistry metricRegistry) {
+                InterceptingItemWriter writer, MetricRegistry metricRegistry,
+                HtmlReportJobExecutionListener htmlReportJobExecutionListener) {
             def factory = new DecoratorFactory(metricRegistry)
             jobBuilderFactory
                     .get("job")
                     .listener(JobListenerFactoryBean.getListener(factory))
+                    .listener(htmlReportJobExecutionListener)
                     .start(
                     stepBuilderFactory.get("step1")
                             .chunk(10)

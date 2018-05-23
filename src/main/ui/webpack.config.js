@@ -3,7 +3,7 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 const CleanWebpackPlugin = require('clean-webpack-plugin');
 const HtmlWebpackInlineSourcePlugin = require('html-webpack-inline-source-plugin');
 const webpack = require('webpack');
-
+//For dev comment inlineSource and new HtmlWebpackInlineSourcePlugin()
 module.exports = {
   entry: {
     app: './src/index.js'
@@ -17,10 +17,10 @@ module.exports = {
     new CleanWebpackPlugin(['dist']),
     new HtmlWebpackPlugin({
       title: 'Output Management',
-      inlineSourceBak: '.(js|css)$',
+      inlineSource: '.(js|css)$',
       template: 'index.html'
     }),
-    //new HtmlWebpackInlineSourcePlugin(),
+    new HtmlWebpackInlineSourcePlugin(),
     new webpack.ProvidePlugin({
       $: 'jquery',
       jQuery: 'jquery',

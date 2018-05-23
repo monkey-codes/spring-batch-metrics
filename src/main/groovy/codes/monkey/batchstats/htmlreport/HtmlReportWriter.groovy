@@ -32,7 +32,9 @@ class HtmlReportWriter {
         def writer = new BufferedWriter(new OutputStreamWriter(outputStream, charsetName))
         toStream(templateStream).flatMap({ line ->
             line.contains(dataPlaceholderToken) ?
-                    concat(of(prefix), concat(toStream(dataStream), of(suffix))) : of(line)
+                    concat(of(prefix),
+                            concat(toStream(dataStream).map({row -> row + ","})
+                                    , of(suffix))) : of(line)
         }).forEach({ line ->
             writer.writeLine(line)
         })

@@ -5,9 +5,6 @@ import org.hamcrest.Matcher
 import org.hamcrest.Matchers
 import org.hamcrest.TypeSafeMatcher
 
-/**
- * @author Johan Zietsman (jzietsman@thoughtworks.com.au).
- */
 class StatsMatchers {
 
     static Closure exceptionOn(... errorOnItem) {

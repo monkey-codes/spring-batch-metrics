@@ -13,3 +13,8 @@ will not emit processing or write events.
    case of write events itself, write will be called with a chunk of 1 to figure out where in the original 
    chunk the write error happend.
  
+Run from cli
+```
+$ nvm use v8.9.1
+$ ./gradlew clean bootRun -Dspring.batch.job.names=single.thread.decorator.driven.job -Dcodes.monkey.metric.output.dir=$(pwd)
+```

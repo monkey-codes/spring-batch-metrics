@@ -2,9 +2,7 @@ package codes.monkey.batchstats.eventdriven.statemachine
 
 import spock.lang.Specification
 
-/**
- * @author Johan Zietsman (jzietsman@thoughtworks.com.au).
- */
+
 class JobStateMachineSpec extends Specification {
 
     JobStateListener jobStateListener = Mock()

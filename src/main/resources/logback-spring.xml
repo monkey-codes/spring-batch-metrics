@@ -3,9 +3,9 @@
     <include resource="org/springframework/boot/logging/logback/base.xml"/>
 
     <property resource="application.properties"/>
-
+    <property name="STATS-LOG-FILE" value="${codes.monkey.metric.output.dir}/${codes.monkey.metric.logfile.name}"/>
     <appender name="STATS-FILE" class="ch.qos.logback.core.FileAppender">
-        <file>${codes.monkey.metric.logfile}</file>
+        <file>${STATS-LOG-FILE}</file>
         <append>false</append>
         <immediateFlush>true</immediateFlush>
         <encoder class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">
@@ -13,17 +13,9 @@
         </encoder>
     </appender>
 
-    <!--<appender name="STATS" class="ch.qos.logback.core.ConsoleAppender">-->
-        <!--<withJansi>true</withJansi>-->
-        <!--<encoder class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">-->
-            <!--<layout class="codes.monkey.batchstats.htmlreport.JsonReportDataLayout" />-->
-        <!--</encoder>-->
-    <!--</appender>-->
-
     <logger name="org.springframework" level="INFO"/>
 
     <logger name="codes.monkey.batchstats.eventdriven.StatsListener" level="INFO" additivity="true">
-        <!--<appender-ref ref="STATS" />-->
         <appender-ref ref="STATS-FILE" />
     </logger>
 </configuration>

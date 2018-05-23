@@ -2,9 +2,7 @@ package codes.monkey.batchstats.eventdriven
 
 import org.springframework.batch.item.ItemWriter
 
-/**
- * @author Johan Zietsman (jzietsman@thoughtworks.com.au).
- */
+
 class SynchronizedItemWriter<T> implements ItemWriter<T> {
 
     private ItemWriter<T> delegate

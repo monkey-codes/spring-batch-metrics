@@ -13,9 +13,7 @@ import org.springframework.batch.item.ItemProcessor
 import org.springframework.batch.item.ItemReader
 import org.springframework.batch.item.ItemWriter
 
-/**
- * @author Johan Zietsman (jzietsman@thoughtworks.com.au).
- */
+
 class DecoratorFactory {
     private MetricRegistry metricRegistry
     private StatsNamespace namespace

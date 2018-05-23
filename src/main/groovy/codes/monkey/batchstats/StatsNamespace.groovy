@@ -2,9 +2,7 @@ package codes.monkey.batchstats
 
 import java.util.stream.Collectors
 
-/**
- * @author Johan Zietsman (jzietsman@thoughtworks.com.au).
- */
+
 class StatsNamespace {
 
     Deque<String> stack = new ArrayDeque<>()

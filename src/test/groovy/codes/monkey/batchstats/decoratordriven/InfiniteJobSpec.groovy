@@ -20,20 +20,13 @@ import org.springframework.batch.item.UnexpectedInputException
 import org.springframework.batch.item.function.FunctionItemProcessor
 import org.springframework.batch.item.support.ListItemWriter
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.test.context.TestConfiguration
 import org.springframework.context.annotation.Bean
-import org.springframework.context.annotation.Configuration
-import org.springframework.context.annotation.Import
 import org.springframework.test.annotation.DirtiesContext
 import org.springframework.test.context.ContextConfiguration
-import org.springframework.test.context.TestPropertySource
 import spock.lang.Ignore
 import spock.lang.Specification
 
-/**
- * @author Johan Zietsman (jzietsman@thoughtworks.com.au).
- */
 @ContextConfiguration(classes = TestConfig)
 class InfiniteJobSpec extends Specification {
 
@@ -87,9 +80,10 @@ class InfiniteJobSpec extends Specification {
             new ItemReader<Integer>() {
                 Random random = new Random()
                 int counter = 0
+
                 @Override
                 Integer read() throws Exception, UnexpectedInputException, ParseException, NonTransientResourceException {
-                    if(counter++ == 300) {
+                    if (counter++ == 300) {
                         return null
                     }
                     return random.nextInt(101)
@@ -113,9 +107,9 @@ class InfiniteJobSpec extends Specification {
         }
 
         @Bean
-        HtmlReportJobExecutionListener htmlReportJobExecutionListener(){
+        HtmlReportJobExecutionListener htmlReportJobExecutionListener() {
             new HtmlReportJobExecutionListener("/Users/johanz/git/monkey/batch-stats/build/metrics.json",
-            "/Users/johanz/git/monkey/batch-stats/build/report.html")
+                    "/Users/johanz/git/monkey/batch-stats/build/report.html")
         }
 
         @Bean

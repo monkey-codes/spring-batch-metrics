@@ -7,9 +7,7 @@ import org.springframework.batch.core.StepExecution
 import org.springframework.batch.core.annotation.*
 import org.springframework.batch.core.scope.context.ChunkContext
 
-/**
- * @author Johan Zietsman (jzietsman@thoughtworks.com.au).
- */
+
 class ThreadDebugListener {
 
     private static Logger LOG = LoggerFactory.getLogger(ThreadDebugListener.class.name)

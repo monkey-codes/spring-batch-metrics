@@ -4,9 +4,7 @@ import spock.lang.Specification
 
 import java.nio.charset.Charset
 
-/**
- * @author Johan Zietsman (jzietsman@thoughtworks.com.au).
- */
+
 class HtmlReportWriterSpec extends Specification {
 
     public static final String CHARSET = "UTF-8"

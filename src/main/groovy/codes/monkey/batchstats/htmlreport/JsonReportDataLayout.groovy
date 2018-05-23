@@ -3,9 +3,7 @@ package codes.monkey.batchstats.htmlreport
 import ch.qos.logback.classic.spi.ILoggingEvent
 import ch.qos.logback.core.LayoutBase
 
-/**
- * @author Johan Zietsman (jzietsman@thoughtworks.com.au).
- */
+
 class JsonReportDataLayout extends LayoutBase<ILoggingEvent> {
 
     @Override
@@ -15,10 +13,10 @@ class JsonReportDataLayout extends LayoutBase<ILoggingEvent> {
 
     String toJSON(long timeStamp, String msg) {
         [
-                [/(type|name|rate_unit|duration_unit)=([a-zA-Z0-9.\/]+)/,'$1=\"$2\"'],
-                [/([a-zA-Z_0-9]+)=/,'"$1"='],
-                [/=/,':'],
-                [/(.+)/,'{$1}\n']
-        ].inject("ts=$timeStamp, $msg") {m, replacement -> m.replaceAll(replacement[0], replacement[1])}
+                [/(type|name|rate_unit|duration_unit)=([a-zA-Z0-9.\/]+)/, '$1=\"$2\"'],
+                [/([a-zA-Z_0-9]+)=/, '"$1"='],
+                [/=/, ':'],
+                [/(.+)/, '{$1}\n']
+        ].inject("ts=$timeStamp, $msg") { m, replacement -> m.replaceAll(replacement[0], replacement[1]) }
     }
 }

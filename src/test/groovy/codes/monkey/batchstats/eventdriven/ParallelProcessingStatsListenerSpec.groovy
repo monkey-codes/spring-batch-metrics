@@ -27,9 +27,7 @@ import static org.hamcrest.Matchers.allOf
 import static org.hamcrest.Matchers.greaterThanOrEqualTo
 import static spock.util.matcher.HamcrestSupport.expect
 
-/**
- * @author Johan Zietsman (jzietsman@thoughtworks.com.au).
- */
+
 @ContextConfiguration(classes = ListenerJobConfig)
 class ParallelProcessingStatsListenerSpec extends Specification {
 

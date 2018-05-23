@@ -3,16 +3,14 @@ package codes.monkey.batchstats.htmlreport
 import org.springframework.batch.core.JobExecution
 import org.springframework.batch.core.JobExecutionListener
 
-/**
- * @author Johan Zietsman (jzietsman@thoughtworks.com.au).
- */
-class HtmlReportJobExecutionListener implements JobExecutionListener{
+
+class HtmlReportJobExecutionListener implements JobExecutionListener {
 
     String dataPath
     String outputPath
 
     HtmlReportJobExecutionListener(
-            String dataPath, String outputPath){
+            String dataPath, String outputPath) {
         this.dataPath = dataPath
         this.outputPath = outputPath
     }
@@ -41,7 +39,7 @@ var events = [""", """];
                             |</html>
                             |""".stripMargin().getBytes("UTF-8"))
 
-                writer.merge(templateStream, dataStream, ostream )
+                writer.merge(templateStream, dataStream, ostream)
                 templateStream.close()
             }
         }

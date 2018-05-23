@@ -22,9 +22,7 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.core.task.TaskExecutor
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor
 
-/**
- * @author Johan Zietsman (jzietsman@thoughtworks.com.au).
- */
+
 @EnableBatchProcessing
 @Configuration
 class SampleJobConfiguration {

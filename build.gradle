@@ -54,3 +54,5 @@ task copyReportTemplate(type: Copy, dependsOn: runYarn) {
 }
 processResources.dependsOn copyReportTemplate
 
+bootRun { systemProperties = System.properties }
+

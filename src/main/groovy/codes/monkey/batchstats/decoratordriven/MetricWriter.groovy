@@ -4,9 +4,7 @@ import codes.monkey.batchstats.StatsNamespace
 import com.codahale.metrics.MetricRegistry
 import org.springframework.batch.item.ItemWriter
 
-/**
- * @author Johan Zietsman (jzietsman@thoughtworks.com.au).
- */
+
 class MetricWriter<T> implements ItemWriter<T> {
     private ItemWriter<T> delegate
     private MetricRegistry metricRegistry

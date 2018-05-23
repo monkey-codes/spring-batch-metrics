@@ -16,9 +16,7 @@ import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType
 
 import javax.sql.DataSource
 
-/**
- * @author Johan Zietsman (jzietsman@thoughtworks.com.au).
- */
+
 @Configuration
 @Import(StatsConfig)
 @EnableBatchProcessing

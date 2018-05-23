@@ -4,9 +4,7 @@ import codes.monkey.batchstats.StatsNamespace
 import com.codahale.metrics.MetricRegistry
 import org.springframework.batch.item.ItemProcessor
 
-/**
- * @author Johan Zietsman (jzietsman@thoughtworks.com.au).
- */
+
 class MetricProcessor<I, O> implements ItemProcessor<I, O> {
     private ItemProcessor<I, O> delegate
     private MetricRegistry metricRegistry

@@ -10,9 +10,7 @@ import org.springframework.context.annotation.Configuration
 
 import java.util.concurrent.TimeUnit
 
-/**
- * @author Johan Zietsman (jzietsman@thoughtworks.com.au).
- */
+
 @Configuration
 class StatsConfig {
 

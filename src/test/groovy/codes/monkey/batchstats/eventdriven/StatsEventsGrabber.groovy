@@ -9,9 +9,7 @@ import org.hamcrest.Matcher
 import org.hamcrest.TypeSafeMatcher
 import org.slf4j.LoggerFactory
 
-/**
- * @author Johan Zietsman (jzietsman@thoughtworks.com.au).
- */
+
 class StatsEventsGrabber {
     private ListAppender<ILoggingEvent> listAppender
 

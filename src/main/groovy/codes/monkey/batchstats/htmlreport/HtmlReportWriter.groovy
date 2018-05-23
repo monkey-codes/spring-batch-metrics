@@ -5,9 +5,7 @@ import java.util.stream.Stream
 import static java.util.stream.Stream.concat
 import static java.util.stream.Stream.of
 
-/**
- * @author Johan Zietsman (jzietsman@thoughtworks.com.au).
- */
+
 class HtmlReportWriter {
     public static final String DEFAULT_PLACEHOLDER = "\$reportData"
     public static final String DEFAULT_CHARSET = "UTF-8"
@@ -33,7 +31,7 @@ class HtmlReportWriter {
         toStream(templateStream).flatMap({ line ->
             line.contains(dataPlaceholderToken) ?
                     concat(of(prefix),
-                            concat(toStream(dataStream).map({row -> row + ","})
+                            concat(toStream(dataStream).map({ row -> row + "," })
                                     , of(suffix))) : of(line)
         }).forEach({ line ->
             writer.writeLine(line)

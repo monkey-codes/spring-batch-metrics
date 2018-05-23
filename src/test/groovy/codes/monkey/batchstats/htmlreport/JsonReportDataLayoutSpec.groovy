@@ -6,9 +6,7 @@ import spock.lang.Specification
 import java.time.Instant
 import java.time.format.DateTimeFormatter
 
-/**
- * @author Johan Zietsman (jzietsman@thoughtworks.com.au).
- */
+
 class JsonReportDataLayoutSpec extends Specification {
 
     public static final String DATE_TIME_PATTERN = "yyyy-MM-dd'T'HH:mm:ss.SSSZ"

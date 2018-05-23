@@ -24,9 +24,7 @@ import static codes.monkey.batchstats.eventdriven.StatsEventsGrabber.lastEvent
 import static org.hamcrest.Matchers.allOf
 import static spock.util.matcher.HamcrestSupport.expect
 
-/**
- * @author Johan Zietsman (jzietsman@thoughtworks.com.au).
- */
+
 @ContextConfiguration(classes = DecoratorSpec.TestConfig)
 class DecoratorSpec extends Specification {
 

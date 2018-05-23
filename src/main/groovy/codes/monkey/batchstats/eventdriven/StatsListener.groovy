@@ -9,9 +9,7 @@ import org.springframework.batch.core.JobExecution
 import org.springframework.batch.core.StepExecution
 import org.springframework.batch.core.scope.context.ChunkContext
 
-/**
- * @author Johan Zietsman (jzietsman@thoughtworks.com.au).
- */
+
 class StatsListener implements JobStateListener {
 
     private MetricRegistry metricRegistry

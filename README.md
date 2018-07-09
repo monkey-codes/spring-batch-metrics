@@ -1,20 +1,18 @@
-#Limitations
+An example of how to [extract performance metrics out of a Spring Batch Job using Dropwizard Metrics](https://blog.monkey.codes/how-to-gather-performance-metrics-in-spring-batch/).
 
-* Jobs must have a processor. The state machine relies on
-some of the processor events to create synthetic balanced state events. You can use
-PassThroughItemProcessor provided by batch framework when no processing is required on the job.
+![Sample HTML Report](https://res.cloudinary.com/monkey-codes/image/upload/v1527829338/batch_stats_html_report.png)
 
-* Once a Process or Write error happens in a chunk, the subsequent re process chunk
-will not emit processing or write events. 
-  * Emitting processing events in this state may yield process counts higher that the number of
-  read items because if a chunk contains more than 1 process error the same item may be processed
-  several times while the framework whittles down the chunk to only the items that pass processing.
-  * Emitting write events will also skew numbers, since write events in this case will happen on smaller chunks. In 
-   case of write events itself, write will be called with a chunk of 1 to figure out where in the original 
-   chunk the write error happend.
- 
-Run from cli
+## Usage
+
+The gradle build will expect node 8.9.1 and yarn to be installed on the system.
+
 ```
-$ nvm use v8.9.1
-$ ./gradlew clean bootRun -Dspring.batch.job.names=single.thread.decorator.driven.job -Dcodes.monkey.metric.output.dir=$(pwd)
+$ git clone https://github.com/monkey-codes/spring-batch-metrics.git
+$ cd spring-batch-metrics
+# if you are using nvm
+$ nvm use 8.9.1
+$ ./gradlew clean build
+$ ./gradlew bootRun -Dspring.batch.job.names=single.thread.decorator.driven.job -Dcodes.monkey.metric.output.dir=$(pwd)/build
+# to view the html report generated in the tmp folder
+$ open ./build/report.html
 ```

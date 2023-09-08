@@ -1,4 +1,4 @@
-An example of how to [extract performance metrics out of a Spring Batch Job using Dropwizard Metrics](https://blog.monkey.codes/how-to-gather-performance-metrics-in-spring-batch/).
+An example of how to [extract performance metrics out of a Spring Batch Job using Dropwizard Metrics](https://johanzietsman.com/how-to-gather-performance-metrics-in-spring-batch/).
 
 ![Sample HTML Report](https://res.cloudinary.com/monkey-codes/image/upload/v1527829338/batch_stats_html_report.png)
 
